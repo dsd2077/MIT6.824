@@ -58,18 +58,18 @@ func TestReElection2A(t *testing.T) {
 	cfg.begin("Test (2A): election after network failure")
 
 	leader1 := cfg.checkOneLeader()
-	DPrintf("111")
+	DPrintf("1111")
 
 	// if the leader disconnects, a new one should be elected.
 	cfg.disconnect(leader1)
 	cfg.checkOneLeader()
-	DPrintf("222")
+	DPrintf("2222")
 
 	// if the old leader rejoins, that shouldn't
 	// disturb the new leader.
 	cfg.connect(leader1)
 	leader2 := cfg.checkOneLeader()
-	DPrintf("333")
+	DPrintf("3333")
 
 	// if there's no quorum, no leader should
 	// be elected.
@@ -77,16 +77,18 @@ func TestReElection2A(t *testing.T) {
 	cfg.disconnect((leader2 + 1) % servers)
 
 	time.Sleep(2 * RaftElectionTimeout)
-	DPrintf("444")
 	cfg.checkNoLeader()
+	DPrintf("4444")
 
 	// if a quorum arises, it should elect a leader.
 	cfg.connect((leader2 + 1) % servers)
 	cfg.checkOneLeader()
+	DPrintf("555")
 
 	// re-join of last node shouldn't prevent leader from existing.
 	cfg.connect(leader2)
 	cfg.checkOneLeader()
+	DPrintf("6666")
 
 	cfg.end()
 }
