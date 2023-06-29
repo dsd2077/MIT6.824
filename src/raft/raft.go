@@ -155,21 +155,24 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	rf.lastReceive = time.Now()
-	if args.Term > rf.currentTerm {
-		rf.serverState = Follower
-		rf.votedFor = -1
-	}
-	// 这里简单处理，凡是小于等于自己的term,全部拒绝投票
-	if args.Term <= rf.currentTerm {
+	if args.Term < rf.currentTerm || (args.Term == rf.currentTerm && rf.votedFor != -1 && rf.votedFor != args.CandidateId) {
 		reply.Term = rf.currentTerm
 		reply.VoteGranted = false
 		return
+	}
+	if args.Term > rf.currentTerm {
+		if rf.serverState != Follower {
+			DPrintf("[%d] switch from [%s] to [%s]", rf.me, rf.serverState, Follower)
+			rf.serverState = Follower
+		}
+		rf.currentTerm = args.Term
+		rf.votedFor = -1
 	}
 	if !rf.isLogUp2Date(args.LastLogTerm, args.LastLogIndex) {
 		reply.Term, reply.VoteGranted = rf.currentTerm, false
 		return
 	}
-	rf.currentTerm, rf.votedFor = args.Term, args.CandidateId
+	rf.votedFor = args.CandidateId
 
 	reply.Term, reply.VoteGranted = rf.currentTerm, true
 	DPrintf("[%d] vote for [%d]", rf.me, args.CandidateId)
@@ -334,10 +337,16 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = false
 		return
 	}
+	if args.Term > rf.currentTerm {
+		rf.currentTerm = args.Term
+		if rf.serverState != Follower {
+			DPrintf("[%d] switch from [%s] to [%s]", rf.me, rf.serverState, Follower)
+			rf.serverState = Follower
+			rf.votedFor = -1
+		}
+	}
 	//心跳包
 	if len(args.Entries) == 0 {
-		rf.currentTerm = args.Term
-		rf.serverState = Follower
 		reply.Success = true
 		//将所有此前的entry全部提交
 		if args.LeaderCommit > rf.commitIndex {
@@ -398,18 +407,24 @@ func (rf *Raft) heartBeat() {
 			LeaderCommit: rf.commitIndex,
 		}
 		rf.mu.Unlock()
-		for idx, peer := range rf.peers {
-			if idx == rf.me {
+		for i := 0; i < len(rf.peers); i++ {
+			if i == rf.me {
 				continue
 			}
-			//DPrintf("[%d] send heartBeat to [%d]", rf.me, idx)
-
-			// TODO:如果follower没有回复，是否重发?
-			// TODO:如果对方回复false，是否转移状态?
-			go peer.Call("Raft.AppendEntries", &arg, &AppendEntriesReply{})
+			DPrintf("[%d] send heartBeat to [%d] at term [%d]", rf.me, i, rf.currentTerm)
+			go func(server int) {
+				reply := AppendEntriesReply{}
+				ok := rf.peers[server].Call("Raft.AppendEntries", &arg, &reply)
+				if ok && reply.Term > rf.currentTerm {
+					rf.currentTerm = reply.Term
+					DPrintf("[%d] switch from [%s] to [%s]", rf.me, rf.serverState, Follower)
+					rf.serverState = Follower
+					rf.votedFor = -1
+				}
+			}(i)
 		}
 		//超时时间设置为多少？——要求每秒不要超过10次
-		time.Sleep(time.Duration(150) * time.Millisecond)
+		time.Sleep(time.Duration(200) * time.Millisecond)
 	}
 }
 
@@ -421,10 +436,14 @@ func (rf *Raft) isLeader() bool {
 
 // 心跳机制，定期触发leader选举,
 func (rf *Raft) ticker() {
-	for !rf.killed() && !rf.isLeader() {
+	for !rf.killed() {
 		start := time.Now()
-		interval := rand.Intn(151) + 150
+		interval := rand.Intn(151) + 400
 		time.Sleep(time.Duration(interval) * time.Millisecond)
+		if rf.isLeader() {
+			continue
+		}
+		DPrintf("[%d] election time out!", rf.me)
 
 		rf.mu.Lock()
 		if rf.lastReceive.After(start) {
@@ -432,7 +451,6 @@ func (rf *Raft) ticker() {
 			continue
 		}
 
-		DPrintf("[%d] begin election", rf.me)
 		rf.currentTerm += 1
 		rf.serverState = Candidate
 		rf.votedFor = rf.me
@@ -444,6 +462,7 @@ func (rf *Raft) ticker() {
 			LastLogTerm:  rf.log[len(rf.log)-1].Term,
 		}
 		rf.mu.Unlock()
+		DPrintf("[%d] begin election at term [%d]", rf.me, rf.currentTerm)
 
 		votes := 1    //获得的选票
 		finished := 1 //已经询问过的raft server
@@ -453,35 +472,33 @@ func (rf *Raft) ticker() {
 			}
 			go func(server int) {
 				reply := RequestVoteReply{}
-				ok := rf.sendRequestVote(server, &args, &reply)
+				ok := rf.sendRequestVote(server, &args, &reply) //这里的请求有可能丢包、延迟、对端宕机
 				rf.mu.Lock()
 				defer rf.mu.Unlock()
 				if ok && reply.VoteGranted {
 					votes++
 					DPrintf("[%d] receive vote from [%d]!", rf.me, server)
 				}
-				// TODO:发现更大的Term,是否做处理?,怎么放弃?
-				if reply.Term > rf.currentTerm {
+				if ok && reply.Term > rf.currentTerm {
+					rf.currentTerm = reply.Term
+					rf.serverState = Follower
+					rf.votedFor = -1
 				}
 				finished++
-				rf.cond.Broadcast()
 			}(i)
 		}
+		// 假设200ms还没有收到消息就认为丢包了。
+		time.Sleep(time.Duration(200) * time.Millisecond)
 		rf.mu.Lock()
-		//跳出循环的条件：1、赢得半数选票，2、完成所有询问
-		for votes < (len(rf.peers)+1)/2 && finished != len(rf.peers) {
-			//一阶段：Wait()方法会释放rf.mu，并将当前的goroutine阻塞，直到另一个goroutine调用了Cond的Signal()或Broadcast()方法。
-			//二阶段：当另一个goroutine调用了Cond的Signal()或Broadcast()方法，重新对rf.mu加锁。
-			rf.cond.Wait()
-		}
-		if votes >= (len(rf.peers)+1)/2 {
-			DPrintf("[%d] server win the leader", rf.me)
+		if rf.serverState == Candidate && votes >= (len(rf.peers)+1)/2 {
+			DPrintf("[%d] server win the leader at term [%d]", rf.me, rf.currentTerm)
 			rf.serverState = Leader
 			//当选leader之后立刻向所有server广播
 			go rf.heartBeat()
 		} else {
-			DPrintf("[%d] server lost the election", rf.me)
+			DPrintf("[%d] server lost the election at term [%d]", rf.me, rf.currentTerm)
 			rf.serverState = Follower
+			rf.votedFor = -1
 		}
 		rf.mu.Unlock()
 	}
