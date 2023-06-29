@@ -303,6 +303,7 @@ func (rf *Raft) logReplication(entry Entry) {
 		rf.commitIndex = entry.Index
 		msg.CommandValid = true
 	}
+	// TODO:发送消息应该放在一个单独的协程中，因为它是阻塞的
 	rf.applyCh <- msg
 	rf.mu.Unlock()
 
@@ -360,6 +361,7 @@ func (rf *Raft) commit() {
 			Command:      unCommittedEntry.Cmd,
 			CommandIndex: unCommittedEntry.Index,
 		}
+		// TODO:发送消息应该放在一个单独的协程中，因为它是阻塞的
 		rf.applyCh <- msg
 		rf.commitIndex = unCommittedEntry.Index
 	}
@@ -386,19 +388,22 @@ func (rf *Raft) killed() bool {
 
 func (rf *Raft) heartBeat() {
 	for !rf.killed() && rf.isLeader() {
+		rf.mu.Lock()
+		arg := AppendEntriesArgs{
+			Term:         rf.currentTerm,
+			LeaderId:     rf.me,
+			Entries:      []Entry{},
+			PrevLogIndex: rf.log[len(rf.log)-1].Index,
+			PrevLogTerm:  rf.log[len(rf.log)-1].Index,
+			LeaderCommit: rf.commitIndex,
+		}
+		rf.mu.Unlock()
 		for idx, peer := range rf.peers {
 			if idx == rf.me {
 				continue
 			}
 			//DPrintf("[%d] send heartBeat to [%d]", rf.me, idx)
-			arg := AppendEntriesArgs{
-				Term:         rf.currentTerm,
-				LeaderId:     rf.me,
-				Entries:      []Entry{},
-				PrevLogIndex: rf.log[len(rf.log)-1].Index,
-				PrevLogTerm:  rf.log[len(rf.log)-1].Index,
-				LeaderCommit: rf.commitIndex,
-			}
+
 			// TODO:如果follower没有回复，是否重发?
 			// TODO:如果对方回复false，是否转移状态?
 			go peer.Call("Raft.AppendEntries", &arg, &AppendEntriesReply{})
