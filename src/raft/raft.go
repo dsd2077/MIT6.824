@@ -18,6 +18,7 @@ package raft
 //
 
 import (
+	"context"
 	"math/rand"
 	"sync"
 	"time"
@@ -54,6 +55,9 @@ const (
 	Candidate State = "Candidate"
 )
 
+const ELECTIONTIMEOUT = 400
+const HEARTTIMEOUT = 200
+
 // A Go object implementing a single Raft peer.
 type Raft struct {
 	mu        sync.Mutex          // Lock to protect shared access to this peer's state
@@ -76,8 +80,8 @@ type Raft struct {
 	commitIndex int //index of highest log entry known to be committed
 	lastApplied int //index of highest log entry applied to state machine
 
-	//nextIndex  []int
-	matchIndex []int //TODO:这个参数如何更新？
+	nextIndex  []int
+	matchIndex []int
 
 	lastReceive time.Time
 }
@@ -155,18 +159,14 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	rf.lastReceive = time.Now()
+	// Term相等的情况下：只有满足：未曾给别人投票 或者 已经给该candidate投过票了   才能给该candidate投票
 	if args.Term < rf.currentTerm || (args.Term == rf.currentTerm && rf.votedFor != -1 && rf.votedFor != args.CandidateId) {
 		reply.Term = rf.currentTerm
 		reply.VoteGranted = false
 		return
 	}
 	if args.Term > rf.currentTerm {
-		if rf.serverState != Follower {
-			DPrintf("[%d] switch from [%s] to [%s]", rf.me, rf.serverState, Follower)
-			rf.serverState = Follower
-		}
-		rf.currentTerm = args.Term
-		rf.votedFor = -1
+		rf.changeState(args.Term, Follower)
 	}
 	if !rf.isLogUp2Date(args.LastLogTerm, args.LastLogIndex) {
 		reply.Term, reply.VoteGranted = rf.currentTerm, false
@@ -180,10 +180,10 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 func (rf *Raft) isLogUp2Date(lastLogTerm int, lastLogIndex int) bool {
 	// 保证candidate拥有follower已提交的全部日志
 	// TODO:为什么？
-	if lastLogTerm > rf.log[rf.commitIndex].Term {
+	if lastLogTerm > rf.log[len(rf.log)-1].Term {
 		return true
 	}
-	return (lastLogTerm == rf.log[rf.commitIndex].Term) && (lastLogIndex >= rf.commitIndex)
+	return (lastLogTerm == rf.log[len(rf.log)-1].Term) && (lastLogIndex >= rf.log[len(rf.log)-1].Index)
 }
 
 // example code to send a RequestVote RPC to a server.
@@ -253,45 +253,55 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 func (rf *Raft) logReplication(entry Entry) {
 	rf.mu.Lock()
-	//leader先将entry追加到自己的日志中
-	rf.log = append(rf.log, entry)
-
-	//发送AppendEntries RPC给所有follower复制该日志
-	preLogIndex := 0
-	if len(rf.log) >= 2 {
-		preLogIndex = rf.log[len(rf.log)-2].Index
-	}
+	//参数构造放在这里，保证发送给所有Follower的日志都是相同的
 	arg := AppendEntriesArgs{
 		Term:         rf.currentTerm,
 		LeaderId:     rf.me,
 		Entries:      []Entry{entry},
-		PrevLogIndex: preLogIndex,
+		PrevLogIndex: rf.log[len(rf.log)-1].Index,
+		PrevLogTerm:  rf.log[len(rf.log)-1].Term,
 		LeaderCommit: rf.commitIndex,
 	}
+	//leader先将entry追加到自己的日志中
+	rf.log = append(rf.log, entry)
 	rf.mu.Unlock()
+
 	votes := 1
 	finished := 1
+	//发送AppendEntries RPC给所有follower复制该日志
 	for i := 0; i < len(rf.peers); i++ {
 		if i == rf.me {
 			continue
 		}
-		go func(server int) {
+		//将AppendEntriesArgs
+		go func(server int, arg AppendEntriesArgs) {
 			reply := AppendEntriesReply{}
-			ok := rf.peers[server].Call("Raft.AppendEntries", &arg, &reply)
-
+			ok := false
+			// 如果follower没有响应就一直重发
+			for !ok {
+				ok = rf.sendAppendEntries(server, &arg, &reply)
+			}
 			rf.mu.Lock()
 			defer rf.mu.Unlock()
-			if ok && reply.Success {
+			// 遇到新的Leader，转为Follower
+			if reply.Term > rf.currentTerm {
+				rf.changeState(reply.Term, Follower)
+				rf.cond.Broadcast()
+				return
+			}
+			// 根据返回结果同步日志
+			rf.synLog(server, &arg, &reply)
+
+			if reply.Success {
 				votes++
 			}
 			finished++
-			//TODO:这里和ticker使用同一个条件变量是否有问题？——使用同一个条件变量确实不合适，但是应该不会有什么问题
 			rf.cond.Broadcast()
-		}(i)
+		}(i, arg)
 	}
 
 	rf.mu.Lock()
-	for votes < (len(rf.peers)+1)/2 && finished != len(rf.peers) {
+	for rf.serverState == Leader && votes < (len(rf.peers)+1)/2 && finished != len(rf.peers) {
 		rf.cond.Wait()
 		DPrintf("[%d] receive [%d] rep reply", rf.me, votes)
 	}
@@ -302,15 +312,60 @@ func (rf *Raft) logReplication(entry Entry) {
 		Command:      entry.Cmd,
 		CommandIndex: entry.Index,
 	}
-	if votes >= (len(rf.peers)+1)/2 {
+	if rf.serverState == Leader && votes >= (len(rf.peers)+1)/2 {
 		rf.commitIndex = entry.Index
 		msg.CommandValid = true
 	}
 	// TODO:发送消息应该放在一个单独的协程中，因为它是阻塞的
-	rf.applyCh <- msg
+	go func() {
+		rf.applyCh <- msg
+	}()
+
 	rf.mu.Unlock()
 
 	//如果follower没有恢复，就一直重发RPC
+}
+
+// 通过一致性检查来同步日志
+func (rf *Raft) synLog(server int, arg *AppendEntriesArgs, reply *AppendEntriesReply) {
+	// follower拒绝接收，说明日志不同步
+	for !reply.Success && arg.PrevLogIndex > 0 {
+		arg.Entries = rf.log[arg.PrevLogIndex:]
+		arg.PrevLogIndex--
+		arg.PrevLogTerm = rf.log[arg.PrevLogIndex].Term
+		//如果发送失败，则一直重复发送
+		for ok := false; !ok; {
+			ok = rf.sendAppendEntries(server, arg, reply)
+		}
+	}
+
+}
+
+func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
+	// 创建一个上下文对象和取消函数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 创建一个用于接收结果的通道
+	result := make(chan bool, 1)
+
+	// 启动一个goroutine执行RPC调用
+	go func() {
+		// 在这里执行你的RPC调用
+		ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
+
+		// 假设RPC调用成功并得到结果
+		result <- ok
+	}()
+
+	select {
+	case <-ctx.Done():
+		// 如果超时，则返回false
+		return false
+	case res := <-result:
+		// 如果成功接收到结果，则返回结果
+		return res
+	}
 }
 
 type AppendEntriesArgs struct {
@@ -320,12 +375,22 @@ type AppendEntriesArgs struct {
 	//用来同步日志
 	PrevLogIndex int
 	PrevLogTerm  int
-	LeaderCommit int //TODO:作用？
+	// 用来提交日志
+	LeaderCommit int
 }
 
 type AppendEntriesReply struct {
 	Term    int  //自己当前任期号
 	Success bool //
+}
+
+func (rf *Raft) changeState(newTerm int, state State) {
+	rf.currentTerm = newTerm
+	if rf.serverState != Follower {
+		DPrintf("[%d] switch from [%s] to [%s]", rf.me, rf.serverState, Follower)
+		rf.serverState = state
+		rf.votedFor = -1
+	}
 }
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
@@ -337,40 +402,41 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = false
 		return
 	}
+	//状态转移
 	if args.Term > rf.currentTerm {
-		rf.currentTerm = args.Term
-		if rf.serverState != Follower {
-			DPrintf("[%d] switch from [%s] to [%s]", rf.me, rf.serverState, Follower)
-			rf.serverState = Follower
-			rf.votedFor = -1
-		}
+		rf.changeState(args.Term, Follower)
 	}
-	//心跳包
-	if len(args.Entries) == 0 {
-		reply.Success = true
-		//将所有此前的entry全部提交
-		if args.LeaderCommit > rf.commitIndex {
-			DPrintf("follower [%d] begin to commit", rf.me)
-			rf.commit()
-		}
-		// TODO:如何更新日志
+
+	//一致性检查,只要发送AppendEntries就一定要触发一致性检查，不管是心跳包，还是追加日志
+	if len(rf.log) <= args.PrevLogIndex || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+		reply.Success = false
 		return
 	}
 
-	//TODO:如何更新日志
-	rf.log = append(rf.log, args.Entries...)
+	// 通过一致性检查，将日志追加到log
+	copy(rf.log[args.PrevLogIndex+1:], args.Entries)
+	remain := len(rf.log) - (args.PrevLogIndex + 1)
+	rf.log = append(rf.log, args.Entries[remain:]...)
+
+	// 提交日志
+	if args.LeaderCommit > rf.commitIndex {
+		DPrintf("follower [%d] begin to commit", rf.me)
+		go rf.commit(args.LeaderCommit)
+	}
+
 	reply.Success = true
 }
 
-func (rf *Raft) commit() {
-	for i := rf.commitIndex + 1; i < len(rf.log); i++ {
+func (rf *Raft) commit(leaderCommit int) {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	for i := rf.commitIndex + 1; i < len(rf.log) && i <= leaderCommit; i++ {
 		unCommittedEntry := rf.log[i]
 		msg := ApplyMsg{
 			CommandValid: true,
 			Command:      unCommittedEntry.Cmd,
 			CommandIndex: unCommittedEntry.Index,
 		}
-		// TODO:发送消息应该放在一个单独的协程中，因为它是阻塞的
 		rf.applyCh <- msg
 		rf.commitIndex = unCommittedEntry.Index
 	}
@@ -412,19 +478,23 @@ func (rf *Raft) heartBeat() {
 				continue
 			}
 			DPrintf("[%d] send heartBeat to [%d] at term [%d]", rf.me, i, rf.currentTerm)
-			go func(server int) {
+			go func(server int, arg AppendEntriesArgs) {
 				reply := AppendEntriesReply{}
-				ok := rf.peers[server].Call("Raft.AppendEntries", &arg, &reply)
-				if ok && reply.Term > rf.currentTerm {
-					rf.currentTerm = reply.Term
-					DPrintf("[%d] switch from [%s] to [%s]", rf.me, rf.serverState, Follower)
-					rf.serverState = Follower
-					rf.votedFor = -1
+				// 发送心跳包
+				ok := rf.sendAppendEntries(server, &arg, &reply)
+				if !ok {
+					return
 				}
-			}(i)
+				// 状态转移
+				if reply.Term > rf.currentTerm {
+					rf.changeState(reply.Term, Follower)
+				}
+				//根据返回结果判断是否需要同步日志
+				rf.synLog(server, &arg, &reply)
+			}(i, arg)
 		}
 		//超时时间设置为多少？——要求每秒不要超过10次
-		time.Sleep(time.Duration(200) * time.Millisecond)
+		time.Sleep(time.Duration(HEARTTIMEOUT) * time.Millisecond)
 	}
 }
 
@@ -438,7 +508,7 @@ func (rf *Raft) isLeader() bool {
 func (rf *Raft) ticker() {
 	for !rf.killed() {
 		start := time.Now()
-		interval := rand.Intn(151) + 400
+		interval := rand.Intn(151) + ELECTIONTIMEOUT
 		time.Sleep(time.Duration(interval) * time.Millisecond)
 		if rf.isLeader() {
 			continue
