@@ -265,6 +265,7 @@ loop:
 			// leader moved on really quickly
 			continue
 		}
+		DPrintf("1111")
 
 		iters := 5
 		var wg sync.WaitGroup
@@ -286,6 +287,7 @@ loop:
 
 		wg.Wait()
 		close(is)
+		DPrintf("2222")
 
 		for j := 0; j < servers; j++ {
 			if t, _ := cfg.rafts[j].GetState(); t != term {
@@ -293,6 +295,7 @@ loop:
 				continue loop
 			}
 		}
+		DPrintf("333")
 
 		failed := false
 		cmds := []int{}
