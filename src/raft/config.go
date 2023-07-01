@@ -440,7 +440,7 @@ func (cfg *config) one(cmd interface{}, expectedServers int, retry bool) int {
 			}
 			cfg.mu.Unlock()
 			if rf != nil {
-				index1, _, ok := rf.Start(cmd)
+				index1, _, ok := rf.Start(cmd) //卡在这里没有返回!!!不然的话10S之后就应该报错了
 				if ok {
 					index = index1
 					break
