@@ -125,9 +125,11 @@ func TestRPCBytes2B(t *testing.T) {
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): RPC byte count")
+	//DPrintf("bytes0 : [%d]", cfg.bytesTotal())
 
 	cfg.one(99, servers, false)
 	bytes0 := cfg.bytesTotal()
+	//DPrintf("bytes1 : [%d]", bytes0)
 
 	iters := 10
 	var sent int64 = 0
@@ -138,7 +140,9 @@ func TestRPCBytes2B(t *testing.T) {
 			t.Fatalf("got index %v but expected %v", xindex, index)
 		}
 		sent += int64(len(cmd))
+		//DPrintf("bytes[%d] : [%d]", index, cfg.bytesTotal())
 	}
+	DPrintf("222")
 
 	bytes1 := cfg.bytesTotal()
 	got := bytes1 - bytes0

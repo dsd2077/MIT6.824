@@ -55,8 +55,8 @@ const (
 	Candidate State = "Candidate"
 )
 
-const ELECTIONTIMEOUT = 400
-const HEARTTIMEOUT = 200
+const ELECTIONTIMEOUT = 500
+const HEARTTIMEOUT = 400
 
 // A Go object implementing a single Raft peer.
 type Raft struct {
@@ -158,20 +158,21 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	rf.lastReceive = time.Now()
 	// Term相等的情况下：只有满足：未曾给别人投票 或者 已经给该candidate投过票了   才能给该candidate投票
 	if args.Term < rf.currentTerm || (args.Term == rf.currentTerm && rf.votedFor != -1 && rf.votedFor != args.CandidateId) {
 		reply.Term = rf.currentTerm
 		reply.VoteGranted = false
 		return
 	}
-	if args.Term > rf.currentTerm {
-		rf.changeState(args.Term, Follower)
-	}
 	if !rf.isLogUp2Date(args.LastLogTerm, args.LastLogIndex) {
 		reply.Term, reply.VoteGranted = rf.currentTerm, false
 		return
 	}
+	rf.lastReceive = time.Now()
+	if args.Term > rf.currentTerm {
+		rf.changeState(args.Term, Follower)
+	}
+
 	rf.votedFor = args.CandidateId
 
 	reply.Term, reply.VoteGranted = rf.currentTerm, true
@@ -315,11 +316,11 @@ func (rf *Raft) logReplication(entry Entry) {
 	if rf.serverState == Leader && votes >= (len(rf.peers)+1)/2 {
 		rf.commitIndex = entry.Index
 		msg.CommandValid = true
+		// apply日志
+		go func() {
+			rf.applyCh <- msg
+		}()
 	}
-	// TODO:发送消息应该放在一个单独的协程中，因为它是阻塞的
-	go func() {
-		rf.applyCh <- msg
-	}()
 
 	rf.mu.Unlock()
 
@@ -396,27 +397,30 @@ func (rf *Raft) changeState(newTerm int, state State) {
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	rf.lastReceive = time.Now()
 	reply.Term = rf.currentTerm
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 		return
 	}
-	//状态转移
-	if args.Term > rf.currentTerm {
-		rf.changeState(args.Term, Follower)
-	}
-
 	//一致性检查,只要发送AppendEntries就一定要触发一致性检查，不管是心跳包，还是追加日志
 	if len(rf.log) <= args.PrevLogIndex || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 		reply.Success = false
 		return
 	}
+	rf.lastReceive = time.Now()
+	//状态转移
+	if args.Term > rf.currentTerm {
+		rf.changeState(args.Term, Follower)
+	}
 
 	// 通过一致性检查，将日志追加到log
+	// 先复制
 	copy(rf.log[args.PrevLogIndex+1:], args.Entries)
 	remain := len(rf.log) - (args.PrevLogIndex + 1)
-	rf.log = append(rf.log, args.Entries[remain:]...)
+	// 如果有剩余元素未复制，再采用追加
+	if len(args.Entries) > remain {
+		rf.log = append(rf.log, args.Entries[remain:]...)
+	}
 
 	// 提交日志
 	if args.LeaderCommit > rf.commitIndex {
@@ -513,7 +517,6 @@ func (rf *Raft) ticker() {
 		if rf.isLeader() {
 			continue
 		}
-		DPrintf("[%d] election time out!", rf.me)
 
 		rf.mu.Lock()
 		if rf.lastReceive.After(start) {
