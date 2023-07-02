@@ -388,6 +388,7 @@ func TestRejoin2B(t *testing.T) {
 
 func TestBackup2B(t *testing.T) {
 	servers := 5
+
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
 

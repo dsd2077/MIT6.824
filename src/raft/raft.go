@@ -500,7 +500,7 @@ func (rf *Raft) apply() {
 		}
 		rf.applyCh <- msg
 	}
-	//rf.printEntry()
+	rf.printEntry()
 }
 func (rf *Raft) heartBeat() {
 	for !rf.killed() && rf.isLeader() {
