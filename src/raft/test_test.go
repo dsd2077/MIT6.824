@@ -403,8 +403,11 @@ func TestBackup2B(t *testing.T) {
 	// put leader and one follower in a partition
 	leader1 := cfg.checkOneLeader()
 	cfg.disconnect((leader1 + 2) % servers)
+	DPrintf("server [%d] disconnect", leader1)
 	cfg.disconnect((leader1 + 3) % servers)
+	DPrintf("server [%d] disconnect", (leader1+3)%servers)
 	cfg.disconnect((leader1 + 4) % servers)
+	DPrintf("server [%d] disconnect", (leader1+3)%servers)
 
 	// submit lots of commands that won't commit
 	for i := 0; i < 50; i++ {
