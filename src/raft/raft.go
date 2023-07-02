@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sort"
 	"sync"
 	"time"
 )
@@ -233,7 +234,6 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 // term. the third return value is true if this server believes it is
 // the leader.
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
-
 	// Your code here (2B).
 	if rf.killed() || !rf.isLeader() {
 		return -1, -1, false
@@ -241,17 +241,16 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	DPrintf("[%d] receive cmd [%d]", rf.me, command)
 	rf.mu.Lock() //这里需要加锁，如果别的地方把锁给占了，就拿不到锁
 	defer rf.mu.Unlock()
-	DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, command)
-	// 发起协调
+	//DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, command)
+	term := rf.currentTerm
+	index := len(rf.log)
 	entry := Entry{
-		Index: len(rf.log),
+		Index: index,
 		Term:  rf.currentTerm,
 		Cmd:   command,
 	}
-	go rf.logReplication(entry)
+	rf.log = append(rf.log, entry)
 
-	term := rf.currentTerm
-	index := len(rf.log)
 	return index, term, true
 }
 
@@ -263,14 +262,11 @@ func (rf *Raft) logReplication(entry Entry) {
 		Term:         rf.currentTerm,
 		LeaderId:     rf.me,
 		Entries:      []Entry{entry},
-		PrevLogIndex: rf.log[len(rf.log)-1].Index,
-		PrevLogTerm:  rf.log[len(rf.log)-1].Term,
+		PrevLogIndex: rf.log[entry.Index-1].Index, //前一个日志肯定是指当前日志的前一个日志
+		PrevLogTerm:  rf.log[entry.Index-1].Term,
 		LeaderCommit: rf.lastApplied,
 	}
-	//leader先将entry追加到自己的日志中
-	rf.log = append(rf.log, entry)
 	rf.mu.Unlock()
-
 	votes := 1
 	finished := 1
 	//发送AppendEntries RPC给所有follower复制该日志
@@ -297,7 +293,6 @@ func (rf *Raft) logReplication(entry Entry) {
 			}
 			rf.synLog(server, &arg, &reply)
 			// 根据返回结果同步日志
-
 			if reply.Success {
 				votes++
 			}
@@ -309,22 +304,18 @@ func (rf *Raft) logReplication(entry Entry) {
 	rf.mu.Lock()
 	for rf.serverState == Leader && votes < (len(rf.peers)+1)/2 && finished != len(rf.peers) {
 		rf.cond.Wait()
-		DPrintf("[%d] receive [%d] rep reply", rf.me, votes)
 	}
 	//收到半数选票，可以提交了
-
 	// 一条日志只要复制到了大多数，就被认为已提交,但是还没有应用到状态机上，如果此时Leader宕机了。
 	// 如果还是它当选，那么这条日志就会被apply，
 	// 如果不是它当选，这条日志可能被覆盖
 	if votes >= (len(rf.peers)+1)/2 {
+		DPrintf("[%d] receive [%d] response for command [%d]", rf.me, votes, entry.Cmd)
 		rf.commitIndex = entry.Index
 		// apply日志
 		//rf.printEntry()
 	}
-
 	rf.mu.Unlock()
-
-	//如果follower没有恢复，就一直重发RPC
 }
 
 // 通过一致性检查来同步日志
@@ -341,7 +332,6 @@ func (rf *Raft) synLog(server int, arg *AppendEntriesArgs, reply *AppendEntriesR
 			DPrintf("[%d] copy cmd [%d] to [%d]", rf.me, arg.Entries[0].Cmd, server)
 		}
 	}
-
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
@@ -400,11 +390,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	reply.Term = rf.currentTerm
+	//case1
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 		return
 	}
-	//一致性检查,只要发送AppendEntries就一定要触发一致性检查，不管是心跳包，还是追加日志
+	//case2 : 一致性检查,只要发送AppendEntries就一定要触发一致性检查，不管是心跳包，还是追加日志
 	if len(rf.log) <= args.PrevLogIndex || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 		reply.Success = false
 		return
@@ -435,11 +426,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 func (rf *Raft) printEntry() {
 	// 打印结果
-	DPrintf("log content of [%d] :", rf.me)
-	for idx, entry := range rf.log {
-		fmt.Println(entry.Cmd)
-		if idx == rf.lastApplied {
-			fmt.Println("committed")
+	if Debug > 0 {
+		DPrintf("log content of [%d] :", rf.me)
+		for idx, entry := range rf.log {
+			fmt.Println(entry.Cmd)
+			if idx == rf.lastApplied {
+				fmt.Println("committed")
+			}
 		}
 	}
 }
@@ -479,10 +472,25 @@ func (rf *Raft) killed() bool {
 	return z == 1
 }
 
+// 不好好刷算法，连这个算法都写不出来!!
+func (rf *Raft) updateCommitIndex() {
+	rf.matchIndex[rf.me] = len(rf.log) - 1
+	copyMatchIndex := make([]int, len(rf.matchIndex))
+	copy(copyMatchIndex, rf.matchIndex)
+	sort.Ints(copyMatchIndex)
+
+	N := copyMatchIndex[len(copyMatchIndex)/2] //能通过半数投票的最大值
+	if N > rf.commitIndex && rf.log[N].Term == rf.currentTerm {
+		rf.commitIndex = N
+	}
+}
+
 // Leader在发送心跳包之前调用apply
 func (rf *Raft) apply() {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	// 查看已复制到大部分机器上的最大日志号
+
 	for rf.lastApplied < rf.commitIndex {
 		rf.lastApplied++
 		msg := ApplyMsg{
@@ -490,47 +498,57 @@ func (rf *Raft) apply() {
 			Command:      rf.log[rf.lastApplied].Cmd,
 			CommandIndex: rf.lastApplied,
 		}
-		go func(msg ApplyMsg) {
-			rf.applyCh <- msg
-		}(msg)
-		//rf.printEntry()
+		rf.applyCh <- msg
 	}
+	//rf.printEntry()
 }
 func (rf *Raft) heartBeat() {
 	for !rf.killed() && rf.isLeader() {
 		rf.apply()
 
-		rf.mu.Lock()
-		arg := AppendEntriesArgs{
-			Term:         rf.currentTerm,
-			LeaderId:     rf.me,
-			Entries:      []Entry{},
-			PrevLogIndex: rf.log[len(rf.log)-1].Index,
-			PrevLogTerm:  rf.log[len(rf.log)-1].Term,
-			LeaderCommit: rf.lastApplied,
-		}
-		rf.mu.Unlock()
 		for i := 0; i < len(rf.peers); i++ {
 			if i == rf.me {
 				continue
 			}
 			DPrintf("[%d] send heartBeat to [%d] at term [%d]", rf.me, i, rf.currentTerm)
-			go func(server int, arg AppendEntriesArgs) {
+			go func(server int) {
 				reply := AppendEntriesReply{}
+				rf.mu.Lock()
+				arg := AppendEntriesArgs{
+					Term:         rf.currentTerm,
+					LeaderId:     rf.me,
+					Entries:      rf.log[rf.nextIndex[server]:], //如果没有更多的日志，则为[]
+					PrevLogIndex: rf.log[rf.nextIndex[server]-1].Index,
+					PrevLogTerm:  rf.log[rf.nextIndex[server]-1].Term,
+					LeaderCommit: rf.lastApplied,
+				}
+				newNextIndex := len(rf.log)
+				rf.mu.Unlock()
 				// 发送心跳包
 				ok := rf.sendAppendEntries(server, &arg, &reply)
+				// 丢包了没有关系，过一段时间会再次重发
 				if !ok {
 					return
 				}
 				// 状态转移
 				rf.mu.Lock()
+				// case1
 				if reply.Term > rf.currentTerm {
 					rf.changeState(reply.Term, Follower)
 				}
-				rf.synLog(server, &arg, &reply)
+				// 发送成功
+				if reply.Success {
+					rf.nextIndex[server] = newNextIndex
+					rf.matchIndex[server] = newNextIndex - 1
+					rf.updateCommitIndex()
+				} else {
+					// 发送失败
+					rf.nextIndex[server]--
+				}
+
 				rf.mu.Unlock()
 				//根据返回结果判断是否需要同步日志
-			}(i, arg)
+			}(i)
 		}
 		//超时时间设置为多少？——要求每秒不要超过10次
 		time.Sleep(time.Duration(HEARTTIMEOUT) * time.Millisecond)
@@ -549,12 +567,14 @@ func (rf *Raft) ticker() {
 		start := time.Now()
 		interval := rand.Intn(151) + ELECTIONTIMEOUT
 		time.Sleep(time.Duration(interval) * time.Millisecond)
+		// Leader不参与选举
 		if rf.isLeader() {
 			continue
 		}
 
 		rf.mu.Lock()
-		if rf.lastReceive.After(start) {
+		// 收到心跳包 或者已经投票的Follower不开启选举
+		if rf.lastReceive.After(start) || (rf.serverState == Follower && rf.votedFor != -1) {
 			rf.mu.Unlock()
 			continue
 		}
@@ -601,6 +621,14 @@ func (rf *Raft) ticker() {
 		if rf.serverState == Candidate && votes >= (len(rf.peers)+1)/2 {
 			DPrintf("[%d] server win the leader at term [%d]", rf.me, rf.currentTerm)
 			rf.serverState = Leader
+			//初始化nextIndex和matchIndex
+			for i := range rf.nextIndex {
+				rf.nextIndex[i] = len(rf.log)
+			}
+			for i := range rf.matchIndex {
+				rf.matchIndex[i] = len(rf.log) - 1
+			}
+
 			//当选leader之后立刻向所有server广播
 			go rf.heartBeat()
 		} else {
@@ -643,8 +671,8 @@ func Make(peers []*labrpc.ClientEnd, me int,
 		}},
 		commitIndex: 0,
 		lastApplied: 0,
-		//nextIndex:   nil,
-		//matchIndex:  nil,
+		nextIndex:   make([]int, len(peers)), //log中放了一条空日志，所以nextIndex从1开始
+		matchIndex:  make([]int, len(peers)),
 		lastReceive: time.Now(),
 	}
 	rf.cond.L = &rf.mu
