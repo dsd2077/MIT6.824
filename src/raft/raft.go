@@ -395,9 +395,19 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = false
 		return
 	}
-	//case2 : 一致性检查,只要发送AppendEntries就一定要触发一致性检查，不管是心跳包，还是追加日志
-	if len(rf.log) <= args.PrevLogIndex || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+	// case2 : 一致性检查 :日志缺失
+	if len(rf.log) <= args.PrevLogIndex {
 		reply.Success = false
+		return
+	}
+	if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+		DPrintf("[%d] act truncate before:", rf.me)
+		rf.printEntry()
+		//当前一个日志不相等时进行截断
+		rf.log = rf.log[:args.PrevLogIndex]
+		reply.Success = false
+		DPrintf("[%d] act truncate after :", rf.me)
+		rf.printEntry()
 		return
 	}
 	rf.lastReceive = time.Now()
@@ -414,6 +424,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if len(args.Entries) > remain {
 		rf.log = append(rf.log, args.Entries[remain:]...)
 	}
+	//rf.log = append(rf.log, args.Entries...)
 
 	// 提交日志
 	if args.LeaderCommit > rf.commitIndex {
@@ -429,7 +440,7 @@ func (rf *Raft) printEntry() {
 	if Debug > 0 {
 		DPrintf("log content of [%d] :", rf.me)
 		for idx, entry := range rf.log {
-			fmt.Println(entry.Cmd)
+			fmt.Println(entry.Term, "   ", entry.Cmd)
 			if idx == rf.lastApplied {
 				fmt.Println("committed")
 			}
@@ -450,7 +461,7 @@ func (rf *Raft) commit(leaderCommit int) {
 		}
 		rf.applyCh <- msg
 	}
-	//rf.printEntry()
+	rf.printEntry()
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
@@ -499,8 +510,10 @@ func (rf *Raft) apply() {
 			CommandIndex: rf.lastApplied,
 		}
 		rf.applyCh <- msg
+		if rf.lastApplied == rf.commitIndex {
+			rf.printEntry()
+		}
 	}
-	rf.printEntry()
 }
 func (rf *Raft) heartBeat() {
 	for !rf.killed() && rf.isLeader() {
@@ -574,7 +587,7 @@ func (rf *Raft) ticker() {
 
 		rf.mu.Lock()
 		// 收到心跳包 或者已经投票的Follower不开启选举
-		if rf.lastReceive.After(start) || (rf.serverState == Follower && rf.votedFor != -1) {
+		if rf.lastReceive.After(start) {
 			rf.mu.Unlock()
 			continue
 		}
