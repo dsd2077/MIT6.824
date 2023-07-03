@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"math/rand"
 	"sort"
 	"sync"
@@ -126,17 +127,17 @@ func (rf *Raft) readPersist(data []byte) {
 	}
 	// Your code here (2C).
 	//Example:
-	//r := bytes.NewBuffer(data)
-	//d := labgob.NewDecoder(r)
-	//var currentTerm
-	//var votedFor
-	//if d.Decode(&currentTerm) != nil ||
-	//   d.Decode(&votedFor) != nil {
-	//	log.Fatalf("ClientEnd.Call(): decode reply: %v\n", err)
-	//} else {
-	//  rf.xxx = xxx
-	//  rf.yyy = yyy
-	//}
+	r := bytes.NewBuffer(data)
+	d := labgob.NewDecoder(r)
+	var currentTerm
+	var votedFor
+	if d.Decode(&currentTerm) != nil ||
+	  d.Decode(&votedFor) != nil {
+		log.Fatalf("ClientEnd.Call(): decode reply: %v\n", err)
+	} else {
+	 rf.xxx = xxx
+	 rf.yyy = yyy
+	}
 }
 
 // example RequestVote RPC arguments structure.
@@ -489,6 +490,7 @@ func (rf *Raft) heartBeat() {
 				ok := rf.sendAppendEntries(server, &arg, &reply)
 				// 状态转移
 				rf.mu.Lock()
+				defer rf.mu.Unlock()
 				// 丢包了没有关系，过一段时间会再次重发
 				if !ok || currentTerm != rf.currentTerm {
 					return
@@ -508,7 +510,6 @@ func (rf *Raft) heartBeat() {
 					//rf.nextIndex[server]--
 				}
 
-				rf.mu.Unlock()
 				//根据返回结果判断是否需要同步日志
 			}(i)
 		}
