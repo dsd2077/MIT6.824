@@ -1,11 +1,15 @@
 package kvraft
 
-import "../labrpc"
+import (
+	"../labrpc"
+	"time"
+)
 import "crypto/rand"
 import "math/big"
 
-
 type Clerk struct {
+	//TODO:为什么这里要保存ClientEnd?clerk不是和kvserver交互吗？
+	//猜测：ClientEnd就是kvserver
 	servers []*labrpc.ClientEnd
 	// You will have to modify this struct.
 }
@@ -24,7 +28,6 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	return ck
 }
 
-//
 // fetch the current value for a key.
 // returns "" if the key does not exist.
 // keeps trying forever in the face of all other errors.
@@ -35,14 +38,26 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 // the types of args and reply (including whether they are pointers)
 // must match the declared types of the RPC handler function's
 // arguments. and reply must be passed as a pointer.
-//
 func (ck *Clerk) Get(key string) string {
 
 	// You will have to modify this function.
-	return ""
+	args := GetArgs{key}
+	reply := GetReply{}
+
+	i := 0
+	for {
+		ok := ck.servers[i].Call("KVServer.Get", &args, &reply)
+		if !ok || reply.Err == ErrWrongLeader {
+			i = (i + 1) % len(ck.servers)
+			time.Sleep(50 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+
+	return reply.Value
 }
 
-//
 // shared by Put and Append.
 //
 // you can send an RPC with code like this:
@@ -51,9 +66,25 @@ func (ck *Clerk) Get(key string) string {
 // the types of args and reply (including whether they are pointers)
 // must match the declared types of the RPC handler function's
 // arguments. and reply must be passed as a pointer.
-//
 func (ck *Clerk) PutAppend(key string, value string, op string) {
 	// You will have to modify this function.
+	args := PutAppendArgs{
+		Key:   key,
+		Value: value,
+		Op:    op,
+	}
+	reply := PutAppendReply{}
+	i := 0
+	// 就算发给正确的leader，也有可能出现丢包、延迟、宕机等情况
+	for {
+		ok := ck.servers[i].Call("KVServer.PutAppend", &args, &reply)
+		if !ok || reply.Err == ErrWrongLeader {
+			i = (i + 1) % len(ck.servers)
+			time.Sleep(50 * time.Millisecond)
+		} else {
+			break
+		}
+	}
 }
 
 func (ck *Clerk) Put(key string, value string) {
