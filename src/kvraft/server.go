@@ -7,9 +7,11 @@ import (
 	"log"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const Debug = 1
+const OPTIMEOUT = 1000 //heartbeat的频率为200ms，所以必须大于200ms
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug > 0 {
@@ -22,10 +24,11 @@ type Op struct {
 	// Your definitions here.
 	// Field names must start with capital letters,
 	// otherwise RPC will break.
-	Op     string //"Put" or "Get" or "Append"
-	Key    string
-	Value  string
-	DoneCh chan bool
+	Op         string //"Put" or "Get" or "Append"
+	Key        string
+	Value      string
+	DoneCh     chan bool
+	Identifier int64
 }
 
 type KVServer struct {
@@ -38,59 +41,101 @@ type KVServer struct {
 	maxraftstate int // snapshot if log grows this big
 
 	// Your definitions here.
-	database map[string]string
+	database  map[string]string
+	leader    bool           //与之交互的Raft是不是server
+	appliedOp map[int64]bool //用于记录已经执行过的请求，防止一个请求执行两次
 }
 
+// Clerk会调用Get方法
 // Clerk会调用Get方法
 func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	// Your code here.
 	op := Op{
-		Op:     "Get",
-		Key:    args.Key,
-		DoneCh: make(chan bool),
+		Op:         "Get",
+		Key:        args.Key,
+		DoneCh:     make(chan bool),
+		Identifier: args.Identifier,
 	}
-	_, _, ok := kv.rf.Start(op)
+	// Start有可能丢包、延迟、leader宕机，leader切换
+	// 下面的代码对于：leader宕机、丢包、leader切换是安全的
+	// 对于partition是不安全的
+	for {
+		timeoutCh := time.After(OPTIMEOUT * time.Millisecond)
+		_, _, ok := kv.rf.Start(op)
 
-	if !ok {
-		reply.Err = ErrWrongLeader
-		return
+		// 不是leader
+		if !ok {
+			kv.mu.Lock()
+			kv.leader = false
+			kv.mu.Unlock()
+			reply.Err = ErrWrongLeader
+			return
+		}
+		kv.mu.Lock()
+		kv.leader = true
+		kv.mu.Unlock()
+		// 不能在这里,Start返回并不意味着日志真正的"提交"
+		// op的执行在另外的地方，执行的结果在这里回复？
+		// 难道在这里读applyCh?————不会的
+		// 可以通过管道来完成不同进程之间的通信,当其他协程完成op，通过管道将信息传递过来
+		// 日志复制成功
+		select {
+		case <-op.DoneCh:
+			reply.Value = ""
+			kv.mu.Lock()
+			_, ok := kv.database[args.Key]
+			kv.mu.Unlock()
+			// 键不存在于map中
+			if !ok {
+				reply.Err = ErrNoKey
+				return
+			}
+			kv.mu.Lock()
+			reply.Value = kv.database[args.Key]
+			kv.mu.Unlock()
+			reply.Err = OK
+			return
+		case <-timeoutCh:
+			continue
+		}
 	}
-	// 不能在这里,Start返回并不意味着日志真正的"提交"
-	// op的执行在另外的地方，执行的结果在这里回复？
-	// 难道在这里读applyCh?————不会的
-	// 可以通过管道来完成不同进程之间的通信,当其他协程完成op，通过管道将信息传递过来
-	// 日志复制成功
-	<-op.DoneCh
-	reply.Value = ""
-	if _, ok := kv.database[args.Key]; !ok {
-		// 键不存在于map中
-		reply.Err = ErrNoKey
-		return
-	}
-
-	reply.Value = kv.database[args.Key]
-	reply.Err = OK
 }
 
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	// Your code here.
 	op := Op{
-		Op:     args.Op,
-		Key:    args.Key,
-		Value:  args.Value,
-		DoneCh: make(chan bool),
+		Op:         args.Op,
+		Key:        args.Key,
+		Value:      args.Value,
+		DoneCh:     make(chan bool),
+		Identifier: args.Identifier,
 	}
-	// 是否存在一种可能：Start成功发送给Leader，但是Leader宕机了，op既没有复制到raft日志中，也没有复制到状态机中
-	_, _, ok := kv.rf.Start(op)
+	// 存在一种可能：Start成功发送给Leader，但是Leader宕机了，op既没有复制到raft日志中，也没有复制到状态机中
+	// 如果发生网络分割，就会永远阻塞在这里
+	for {
+		timeoutCh := time.After(OPTIMEOUT * time.Millisecond)
+		_, _, ok := kv.rf.Start(op)
 
-	if !ok {
-		reply.Err = ErrWrongLeader
-		return
+		if !ok {
+			kv.mu.Lock()
+			kv.leader = false
+			kv.mu.Unlock()
+			reply.Err = ErrWrongLeader
+			return
+		}
+
+		kv.mu.Lock()
+		kv.leader = true
+		kv.mu.Unlock()
+		// 必须设置一个超时时间，
+		select {
+		case <-op.DoneCh:
+			reply.Err = OK
+			return
+		case <-timeoutCh:
+			continue
+		}
 	}
-	//一定要等op执行完成之后再回复Clerk吗？
-	// 必须设置一个超时时间，
-	<-op.DoneCh
-	reply.Err = OK
 }
 
 // the tester calls Kill() when a KVServer instance won't
@@ -121,25 +166,47 @@ func (kv *KVServer) receiveApplyMsg() {
 			continue
 		}
 		op, ok := reply.Command.(Op)
+		// 如果已经执行过，就不再执行
+		kv.mu.Lock()
+		_, exist := kv.appliedOp[op.Identifier]
+		kv.mu.Unlock()
+
+		// 应该是不会发生这种情况
 		if !ok {
 			// Handle the case where the conversion is not possible
 		}
-		switch op.Op {
-		case "Append":
-			kv.mu.Lock()
-			value, _ := kv.database[op.Key]
-			value += op.Value
-			kv.database[op.Key] = op.Value
-			kv.mu.Unlock()
-		case "Put":
-			kv.mu.Lock()
-			kv.database[op.Key] = op.Value
-			kv.mu.Unlock()
-		case "Get":
+		if !exist {
+			switch op.Op {
+			case "Append":
+				kv.mu.Lock()
+				value, _ := kv.database[op.Key]
+				value += op.Value
+				kv.database[op.Key] = value
+				kv.mu.Unlock()
+			case "Put":
+				kv.mu.Lock()
+				kv.database[op.Key] = op.Value
+				kv.mu.Unlock()
+			case "Get":
+			}
 		}
-		op.DoneCh <- true
+
+		// 只有与leader通信的那个kvserver才需要发送回执消息，因为只有 leader kvserver的RPC被调用
+		if kv.isLeader() {
+			op.DoneCh <- true
+		}
+		kv.mu.Lock()
+		kv.appliedOp[op.Identifier] = true
+		kv.mu.Unlock()
+
 		DPrintf("[%d] finish operation", kv.me)
 	}
+}
+
+func (kv *KVServer) isLeader() bool {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+	return kv.leader
 }
 
 // servers[] contains the ports of the set of
@@ -165,6 +232,7 @@ func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persiste
 
 	// You may need initialization code here.
 	kv.database = make(map[string]string)
+	kv.appliedOp = make(map[int64]bool)
 
 	kv.applyCh = make(chan raft.ApplyMsg)
 	kv.rf = raft.Make(servers, me, persister, kv.applyCh) //TODO:为什么这里可以直接调用raft的Make方法？
