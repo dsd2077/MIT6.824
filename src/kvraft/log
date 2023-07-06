@@ -1,0 +1,4029 @@
+Test: partitions, one client (3A) ...
+2023/07/05 17:54:04 Iteration 0
+2023/07/05 17:54:04 send PutAppend PRC call to [0]
+2023/07/05 17:54:04 send PutAppend PRC call to [1]
+2023/07/05 17:54:04 send PutAppend PRC call to [2]
+2023/07/05 17:54:04 send PutAppend PRC call to [3]
+2023/07/05 17:54:04 send PutAppend PRC call to [4]
+2023/07/05 17:54:05 send PutAppend PRC call to [0]
+2023/07/05 17:54:05 send PutAppend PRC call to [1]
+2023/07/05 17:54:05 send PutAppend PRC call to [2]
+2023/07/05 17:54:05 send PutAppend PRC call to [3]			
+2023/07/05 17:54:05 [3] begin election at term [1]
+2023/07/05 17:54:05 [2] vote for [3]
+2023/07/05 17:54:05 [1] vote for [3]
+2023/07/05 17:54:05 [4] vote for [3]
+2023/07/05 17:54:05 [0] vote for [3]
+2023/07/05 17:54:05 [3] receive vote from [2]!
+2023/07/05 17:54:05 [3] receive vote from [1]!
+2023/07/05 17:54:05 [3] server win the leader at term [1]
+2023/07/05 17:54:05 [3] receive vote from [0]!
+2023/07/05 17:54:05 [3] receive vote from [4]!
+
+
+
+2023/07/05 17:54:05 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:05 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:05 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:05 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:05 send PutAppend PRC call to [4]
+2023/07/05 17:54:05 send PutAppend PRC call to [0]
+2023/07/05 17:54:05 send PutAppend PRC call to [1]		//发给1的RPC阻塞了，为什么？？？？
+2023/07/05 17:54:05 [3] begin agreement on  cmd [{%!d(string=Put) %!d(string=0) %!d(string=) 528228718742636176}]
+2023/07/05 17:54:05 [4] receive appendEntry rpc from [3] 
+2023/07/05 17:54:05 [1] receive appendEntry rpc from [3] 
+2023/07/05 17:54:05 [2] receive appendEntry rpc from [3] 
+2023/07/05 17:54:05 [0] receive appendEntry rpc from [3] 
+2023/07/05 17:54:05 log content of [3] :
+0     <nil>
+1     {Put 0  528228718742636176}
+committed
+2023/07/05 17:54:05 [3] receive apply message
+2023/07/05 17:54:05 0: client new append x 0 0 y
+2023/07/05 17:54:05 send PutAppend PRC call to [1]
+2023/07/05 17:54:05 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:05 follower [4] begin to commit
+2023/07/05 17:54:05 [3] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 0 y) 1372808931575961478}]
+2023/07/05 17:54:05 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:05 follower [0] begin to commit
+2023/07/05 17:54:05 log content of [4] :
+0     <nil>
+1     {Put 0  528228718742636176}
+committed
+2023/07/05 17:54:05 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:05 follower [1] begin to commit
+2023/07/05 17:54:05 log content of [0] :
+0     <nil>
+1     {Put 0  528228718742636176}
+committed
+2023/07/05 17:54:05 [0] receive apply message
+2023/07/05 17:54:05 [4] receive apply message
+2023/07/05 17:54:05 log content of [1] :
+0     <nil>
+1     {Put 0  528228718742636176}
+committed
+2023/07/05 17:54:05 [1] receive apply message
+2023/07/05 17:54:05 [2] receive appendEntry rpc from [3] 
+2023/07/05 17:54:05 follower [2] begin to commit
+2023/07/05 17:54:05 log content of [2] :
+0     <nil>
+1     {Put 0  528228718742636176}
+committed
+2023/07/05 17:54:05 [2] receive apply message
+1     {Append 0 x 0 0 y 1372808931575961478}
+2023/07/05 17:54:05 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:05 [4] receive appendEntry rpc from [3] 
+2023/07/05 17:54:06 log content of [3] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+committed
+2023/07/05 17:54:06 [3] receive apply message
+2023/07/05 17:54:06 0: client new get 0
+2023/07/05 17:54:06 send Get PRC call to [1]
+2023/07/05 17:54:06 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:06 follower [4] begin to commit
+2023/07/05 17:54:06 [3] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 3407601055643124657}]
+2023/07/05 17:54:06 log content of [4] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+committed
+2023/07/05 17:54:06 [4] receive apply message
+2023/07/05 17:54:06 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:06 follower [2] begin to commit
+2023/07/05 17:54:06 log content of [2] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+2023/07/05 17:54:06 [2] receive apply message
+committed
+2023/07/05 17:54:06 [1] begin election at term [2]
+2023/07/05 17:54:06 [0] vote for [1]
+2023/07/05 17:54:06 [1] receive vote from [0]!
+2023/07/05 17:54:06 [4] receive appendEntry rpc from [3] 
+2023/07/05 17:54:06 [2] receive appendEntry rpc from [3] 
+2023/07/05 17:54:06 log content of [3] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+1     {Get 0  3407601055643124657}
+2023/07/05 17:54:06 [3] receive apply message
+2023/07/05 17:54:06 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:06 follower [4] begin to commit
+2023/07/05 17:54:06 0: client new get 0
+2023/07/05 17:54:06 send Get PRC call to [1]
+2023/07/05 17:54:06 log content of [4] :
+2023/07/05 17:54:06 [4] receive apply message
+committed
+2023/07/05 17:54:06 [3] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 3882580976639893486}]
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+1     {Get 0  3407601055643124657}
+committed
+2023/07/05 17:54:06 [2] receive appendEntry rpc from [3] 
+2023/07/05 17:54:06 follower [2] begin to commit
+2023/07/05 17:54:06 log content of [2] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+1     {Get 0  3407601055643124657}
+committed
+1     {Get 0  3882580976639893486}
+2023/07/05 17:54:06 [2] receive apply message
+2023/07/05 17:54:06 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:06 [4] receive appendEntry rpc from [3] 
+2023/07/05 17:54:06 [1] begin election at term [3]
+2023/07/05 17:54:06 [0] vote for [1]
+2023/07/05 17:54:06 [1] receive vote from [0]!
+2023/07/05 17:54:06 log content of [3] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+1     {Get 0  3407601055643124657}
+1     {Get 0  3882580976639893486}
+committed
+2023/07/05 17:54:06 [3] receive apply message
+2023/07/05 17:54:06 0: client new get 0
+2023/07/05 17:54:06 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:06 follower [2] begin to commit
+2023/07/05 17:54:06 send Get PRC call to [1]
+2023/07/05 17:54:06 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:06 follower [4] begin to commit
+2023/07/05 17:54:06 log content of [2] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+1     {Get 0  3407601055643124657}
+1     {Get 0  3882580976639893486}
+committed
+2023/07/05 17:54:06 [2] receive apply message
+2023/07/05 17:54:06 log content of [4] :
+0     <nil>
+2023/07/05 17:54:06 [3] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 4260401065285925650}]
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+1     {Get 0  3407601055643124657}
+1     {Get 0  3882580976639893486}
+2023/07/05 17:54:06 [4] receive apply message
+committed
+2023/07/05 17:54:07 [4] receive appendEntry rpc from [3] 
+2023/07/05 17:54:07 [1] receive appendEntry rpc from [3] 
+2023/07/05 17:54:07 [3] switch from [Leader] to [Follower]
+2023/07/05 17:54:07 [1] begin election at term [4]
+2023/07/05 17:54:07 [1] switch from [Candidate] to [Follower]
+2023/07/05 17:54:07 [0] begin election at term [4]
+2023/07/05 17:54:07 [0] switch from [Candidate] to [Follower]
+2023/07/05 17:54:07 [2] begin election at term [2]
+2023/07/05 17:54:07 [2] switch from [Candidate] to [Follower]
+2023/07/05 17:54:07 [3] begin election at term [4]
+2023/07/05 17:54:07 [4] vote for [3]
+2023/07/05 17:54:07 [1] vote for [3]
+2023/07/05 17:54:07 [3] receive vote from [4]!
+2023/07/05 17:54:07 [3] receive vote from [1]!
+2023/07/05 17:54:07 [3] server win the leader at term [4]
+2023/07/05 17:54:07 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:07 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:07 [1] receive appendEntry rpc from [3] 
+2023/07/05 17:54:07 follower [1] begin to commit
+2023/07/05 17:54:07 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:07 [1] receive apply message
+2023/07/05 17:54:07 [1] receive apply message
+2023/07/05 17:54:07 log content of [1] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+1     {Get 0  3407601055643124657}
+1     {Get 0  3882580976639893486}
+committed
+1     {Get 0  4260401065285925650}
+2023/07/05 17:54:07 [1] receive apply message
+2023/07/05 17:54:07 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:07 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:07 [2] begin election at term [5]
+2023/07/05 17:54:07 [0] vote for [2]
+2023/07/05 17:54:07 [2] receive vote from [0]!
+2023/07/05 17:54:07 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:08 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:08 [2] begin election at term [6]
+2023/07/05 17:54:08 [0] begin election at term [6]
+2023/07/05 17:54:08 [2] switch from [Candidate] to [Follower]
+2023/07/05 17:54:08 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:08 [3] switch from [Leader] to [Follower]
+2023/07/05 17:54:08 [0] switch from [Candidate] to [Follower]
+2023/07/05 17:54:09 [0] begin election at term [7]
+2023/07/05 17:54:09 [0] switch from [Candidate] to [Follower]
+2023/07/05 17:54:09 [3] begin election at term [7]
+2023/07/05 17:54:09 [2] vote for [3]
+2023/07/05 17:54:09 [4] vote for [3]
+2023/07/05 17:54:09 [3] receive vote from [2]!
+2023/07/05 17:54:09 [1] vote for [3]
+2023/07/05 17:54:09 [3] receive vote from [1]!
+2023/07/05 17:54:09 [3] server win the leader at term [7]
+2023/07/05 17:54:09 [0] vote for [3]
+2023/07/05 17:54:09 [3] receive vote from [0]!
+2023/07/05 17:54:09 [3] receive vote from [4]!
+2023/07/05 17:54:09 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [2] receive appendEntry rpc from [3] 
+2023/07/05 17:54:09 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [0] receive appendEntry rpc from [3] 
+2023/07/05 17:54:09 follower [0] begin to commit
+2023/07/05 17:54:09 [0] receive apply message
+2023/07/05 17:54:09 [0] receive apply message
+2023/07/05 17:54:09 log content of [0] :
+0     <nil>
+1     {Put 0  528228718742636176}
+1     {Append 0 x 0 0 y 1372808931575961478}
+1     {Get 0  3407601055643124657}
+1     {Get 0  3882580976639893486}
+committed
+1     {Get 0  4260401065285925650}
+2023/07/05 17:54:09 [0] receive apply message
+2023/07/05 17:54:09 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:09 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 wait for partitioner
+2023/07/05 17:54:10 [1] begin election at term [8]
+2023/07/05 17:54:10 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:10 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [1] begin election at term [9]
+2023/07/05 17:54:11 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [4] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [2] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [1] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [0] receive heartbeat rpc from [3] 
+2023/07/05 17:54:11 [3] switch from [Leader] to [Follower]
+2023/07/05 17:54:11 [1] begin election at term [10]
+2023/07/05 17:54:11 [0] vote for [1]
+2023/07/05 17:54:11 [2] vote for [1]
+2023/07/05 17:54:11 [1] receive vote from [0]!
+2023/07/05 17:54:11 [4] vote for [1]
+2023/07/05 17:54:11 [3] vote for [1]
+2023/07/05 17:54:11 [1] receive vote from [2]!
+2023/07/05 17:54:11 [1] server win the leader at term [10]
+2023/07/05 17:54:11 [1] receive vote from [4]!
+2023/07/05 17:54:11 [1] receive vote from [3]!
+2023/07/05 17:54:11 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:11 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:11 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:11 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 wait for clients
+2023/07/05 17:54:12 read from clients 0
+2023/07/05 17:54:12 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:12 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:13 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:14 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:15 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:16 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:17 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:18 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:19 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:20 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:21 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:22 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:23 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:24 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:25 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:25 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:25 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:25 [3] receive heartbeat rpc from [1] 
+^Csignal: interrupt
+FAIL    _/Users/dengshuzhe/projects/6.824/src/kvraft    20.707s
+dengshuzhe@Air kvraft %go test -run TestManyPartitionsOneClient3A 
+Test: partitions, one client (3A) ...
+2023/07/05 17:54:37 Iteration 0
+2023/07/05 17:54:37 send PutAppend PRC call to [0]
+2023/07/05 17:54:37 send PutAppend PRC call to [1]
+2023/07/05 17:54:37 send PutAppend PRC call to [2]
+2023/07/05 17:54:37 send PutAppend PRC call to [3]
+2023/07/05 17:54:37 send PutAppend PRC call to [4]
+2023/07/05 17:54:37 send PutAppend PRC call to [0]
+2023/07/05 17:54:37 send PutAppend PRC call to [1]
+2023/07/05 17:54:38 send PutAppend PRC call to [2]
+2023/07/05 17:54:38 send PutAppend PRC call to [3]
+2023/07/05 17:54:38 [2] begin election at term [1]
+2023/07/05 17:54:38 [4] vote for [2]
+2023/07/05 17:54:38 [3] vote for [2]
+2023/07/05 17:54:38 [1] vote for [2]
+2023/07/05 17:54:38 [2] receive vote from [4]!
+2023/07/05 17:54:38 send PutAppend PRC call to [4]
+2023/07/05 17:54:38 [0] vote for [2]
+2023/07/05 17:54:38 [2] receive vote from [3]!
+2023/07/05 17:54:38 [2] receive vote from [1]!
+2023/07/05 17:54:38 [2] server win the leader at term [1]
+2023/07/05 17:54:38 [2] receive vote from [0]!
+2023/07/05 17:54:38 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 send PutAppend PRC call to [0]
+2023/07/05 17:54:38 send PutAppend PRC call to [1]
+2023/07/05 17:54:38 send PutAppend PRC call to [2]
+2023/07/05 17:54:38 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 send PutAppend PRC call to [3]
+2023/07/05 17:54:38 [2] begin agreement on  cmd [{%!d(string=Put) %!d(string=0) %!d(string=) 3416685804369474116}]
+2023/07/05 17:54:38 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:38 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:38 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:38 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:38 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:38 [2] receive apply message
+committed
+2023/07/05 17:54:38 0: client new get 0
+2023/07/05 17:54:38 send Get PRC call to [3]
+2023/07/05 17:54:38 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 follower [0] begin to commit
+2023/07/05 17:54:38 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:38 follower [1] begin to commit
+2023/07/05 17:54:38 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+committed
+2023/07/05 17:54:38 [0] receive apply message
+2023/07/05 17:54:38 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+committed
+2023/07/05 17:54:38 [1] receive apply message
+2023/07/05 17:54:38 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 732747688581202050}]
+2023/07/05 17:54:38 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:38 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+committed
+2023/07/05 17:54:39 [2] receive apply message
+2023/07/05 17:54:39 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:39 follower [0] begin to commit
+2023/07/05 17:54:39 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:39 follower [1] begin to commit
+2023/07/05 17:54:39 0: client new get 0
+2023/07/05 17:54:39 send Get PRC call to [3]
+2023/07/05 17:54:39 log content of [0] :
+2023/07/05 17:54:39 [0] receive apply message
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+committed
+2023/07/05 17:54:39 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+committed
+2023/07/05 17:54:39 [1] receive apply message
+2023/07/05 17:54:39 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 2261473208116330812}]
+2023/07/05 17:54:39 [4] begin election at term [2]
+2023/07/05 17:54:39 [3] vote for [4]
+2023/07/05 17:54:39 [4] receive vote from [3]!
+2023/07/05 17:54:39 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 log content of [2] :
+0     <nil>
+2023/07/05 17:54:39 [2] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+committed
+2023/07/05 17:54:39 0: client new append x 0 0 y
+2023/07/05 17:54:39 send PutAppend PRC call to [3]
+2023/07/05 17:54:39 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:39 follower [0] begin to commit
+2023/07/05 17:54:39 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:39 follower [1] begin to commit
+2023/07/05 17:54:39 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 0 y) 1068306093564328787}]
+2023/07/05 17:54:39 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+committed
+2023/07/05 17:54:39 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:39 [1] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:39 [0] receive apply message
+committed
+2023/07/05 17:54:39 [4] begin election at term [3]
+2023/07/05 17:54:39 [3] vote for [4]
+2023/07/05 17:54:39 [4] receive vote from [3]!
+2023/07/05 17:54:39 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 [2] switch from [Leader] to [Follower]
+2023/07/05 17:54:39 [2] begin election at term [4]
+2023/07/05 17:54:39 [3] vote for [2]
+2023/07/05 17:54:39 [4] switch from [Candidate] to [Follower]
+2023/07/05 17:54:39 [4] vote for [2]
+2023/07/05 17:54:39 [0] vote for [2]
+2023/07/05 17:54:39 [2] receive vote from [3]!
+2023/07/05 17:54:39 [2] receive vote from [4]!
+2023/07/05 17:54:39 [1] vote for [2]
+2023/07/05 17:54:39 [2] server win the leader at term [4]
+2023/07/05 17:54:39 log content of [2] :
+0     <nil>
+2023/07/05 17:54:39 [2] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+committed
+2023/07/05 17:54:39 [2] receive vote from [0]!
+2023/07/05 17:54:39 [2] receive vote from [1]!
+2023/07/05 17:54:39 0: client new append x 0 1 y
+2023/07/05 17:54:39 send PutAppend PRC call to [3]
+2023/07/05 17:54:39 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:39 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:39 follower [1] begin to commit
+2023/07/05 17:54:39 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 1 y) 937020787766147935}]
+2023/07/05 17:54:39 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+committed
+2023/07/05 17:54:39 [1] receive apply message
+2023/07/05 17:54:39 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 follower [0] begin to commit
+2023/07/05 17:54:39 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:39 [0] receive apply message
+2023/07/05 17:54:39 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+committed
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:40 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:40 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:40 follower [3] begin to commit
+2023/07/05 17:54:40 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:40 follower [4] begin to commit
+2023/07/05 17:54:40 [3] receive apply message
+2023/07/05 17:54:40 [3] receive apply message
+2023/07/05 17:54:40 [3] receive apply message
+2023/07/05 17:54:40 [3] receive apply message
+2023/07/05 17:54:40 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+committed
+2023/07/05 17:54:40 [1] receive appendEntry rpc from [2] 
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:40 [4] receive apply message
+2023/07/05 17:54:40 [4] receive apply message
+2023/07/05 17:54:40 [4] receive apply message
+2023/07/05 17:54:40 [4] receive apply message
+2023/07/05 17:54:40 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+committed
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:40 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:40 follower [4] begin to commit
+2023/07/05 17:54:40 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:40 follower [0] begin to commit
+2023/07/05 17:54:40 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:40 log content of [0] :
+2023/07/05 17:54:40 [0] receive apply message
+2023/07/05 17:54:40 log content of [4] :
+2023/07/05 17:54:40 [4] receive apply message
+2023/07/05 17:54:40 [2] receive apply message
+2023/07/05 17:54:40 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:40 follower [1] begin to commit
+2023/07/05 17:54:40 log content of [1] :
+2023/07/05 17:54:40 0: client new append x 0 2 y
+2023/07/05 17:54:40 send PutAppend PRC call to [3]
+2023/07/05 17:54:40 [1] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+committed
+2023/07/05 17:54:40 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 2 y) 3107783560292028250}]
+2023/07/05 17:54:40 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:40 follower [3] begin to commit
+2023/07/05 17:54:40 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+committed
+2023/07/05 17:54:40 [3] receive apply message
+2023/07/05 17:54:40 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:40 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:40 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:40 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:40 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:40 follower [3] begin to commit
+2023/07/05 17:54:40 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:40 follower [0] begin to commit
+2023/07/05 17:54:40 log content of [3] :
+0     <nil>
+2023/07/05 17:54:40 [3] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+committed
+2023/07/05 17:54:40 log content of [2] :
+0     <nil>
+2023/07/05 17:54:40 [2] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+committed
+2023/07/05 17:54:40 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:40 follower [1] begin to commit
+2023/07/05 17:54:40 0: client new get 0
+2023/07/05 17:54:40 send Get PRC call to [3]
+2023/07/05 17:54:40 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:40 log content of [1] :
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:40 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 554516802077946386}]
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:40 [1] receive apply message
+4     {Append 0 x 0 2 y 3107783560292028250}
+committed
+2023/07/05 17:54:40 [0] receive apply message
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+committed
+2023/07/05 17:54:40 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:40 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:40 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:41 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+committed
+2023/07/05 17:54:41 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:41 follower [0] begin to commit
+2023/07/05 17:54:41 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:41 follower [1] begin to commit
+2023/07/05 17:54:41 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:41 follower [3] begin to commit
+2023/07/05 17:54:41 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:41 log content of [3] :
+1     {Get 0  732747688581202050}
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:41 log content of [0] :
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:41 [0] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:41 [2] receive apply message
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:41 [1] receive apply message
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:41 [3] receive apply message
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:41 0: client new get 0
+2023/07/05 17:54:41 send Get PRC call to [3]
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+committed
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+committed
+2023/07/05 17:54:41 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 2831900303891675981}]
+2023/07/05 17:54:41 [4] begin election at term [5]
+2023/07/05 17:54:41 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:41 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:41 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:41 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+committed
+2023/07/05 17:54:41 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:41 follower [1] begin to commit
+2023/07/05 17:54:41 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:41 follower [0] begin to commit
+2023/07/05 17:54:41 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:41 follower [3] begin to commit
+2023/07/05 17:54:41 log content of [1] :
+0     <nil>
+2023/07/05 17:54:41 [0] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:41 [1] receive apply message
+4     {Append 0 x 0 2 y 3107783560292028250}
+2023/07/05 17:54:41 log content of [3] :
+4     {Get 0  554516802077946386}
+2023/07/05 17:54:41 [2] receive apply message
+4     {Get 0  2831900303891675981}
+committed
+0     <nil>
+2023/07/05 17:54:41 [3] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:41 log content of [0] :
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+0     <nil>
+2023/07/05 17:54:41 0: client new append x 0 3 y
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:41 send PutAppend PRC call to [3]
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+committed
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+committed
+2023/07/05 17:54:41 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 3 y) 3931468322727474328}]
+2023/07/05 17:54:41 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:41 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:41 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:41 [4] begin election at term [6]
+2023/07/05 17:54:41 [4] switch from [Candidate] to [Follower]
+2023/07/05 17:54:42 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+committed
+2023/07/05 17:54:42 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:42 follower [0] begin to commit
+2023/07/05 17:54:42 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:42 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:42 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:42 [0] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+committed
+2023/07/05 17:54:42 [2] switch from [Leader] to [Follower]
+2023/07/05 17:54:42 follower [3] begin to commit
+2023/07/05 17:54:42 [2] receive apply message
+2023/07/05 17:54:42 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+committed
+2023/07/05 17:54:42 0: client new append x 0 4 y
+2023/07/05 17:54:42 send PutAppend PRC call to [3]
+2023/07/05 17:54:42 [3] receive apply message
+2023/07/05 17:54:42 send PutAppend PRC call to [4]
+2023/07/05 17:54:42 send PutAppend PRC call to [0]
+2023/07/05 17:54:42 send PutAppend PRC call to [1]
+2023/07/05 17:54:42 send PutAppend PRC call to [2]
+2023/07/05 17:54:42 send PutAppend PRC call to [3]
+2023/07/05 17:54:42 send PutAppend PRC call to [4]
+2023/07/05 17:54:42 [1] begin election at term [5]
+2023/07/05 17:54:42 send PutAppend PRC call to [0]
+2023/07/05 17:54:42 [4] begin election at term [7]
+2023/07/05 17:54:42 [4] switch from [Candidate] to [Follower]
+2023/07/05 17:54:42 send PutAppend PRC call to [1]
+2023/07/05 17:54:42 send PutAppend PRC call to [2]
+2023/07/05 17:54:42 [2] begin election at term [7]
+2023/07/05 17:54:42 [4] vote for [2]
+2023/07/05 17:54:42 [2] receive vote from [4]!
+2023/07/05 17:54:42 [0] vote for [2]
+2023/07/05 17:54:42 [3] vote for [2]
+2023/07/05 17:54:42 [2] receive vote from [3]!
+2023/07/05 17:54:42 [2] server win the leader at term [7]
+2023/07/05 17:54:42 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:42 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:42 [2] receive vote from [0]!
+2023/07/05 17:54:42 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:42 send PutAppend PRC call to [3]
+2023/07/05 17:54:42 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 4 y) 4582735032443569800}]
+2023/07/05 17:54:42 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:42 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:42 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:42 follower [4] begin to commit
+2023/07/05 17:54:42 [4] receive apply message
+2023/07/05 17:54:42 [4] receive apply message
+2023/07/05 17:54:42 [4] receive apply message
+2023/07/05 17:54:42 [4] receive apply message
+2023/07/05 17:54:42 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+committed
+7     {Append 0 x 0 4 y 4582735032443569800}
+2023/07/05 17:54:42 [1] begin election at term [6]
+2023/07/05 17:54:42 [1] switch from [Candidate] to [Follower]
+2023/07/05 17:54:42 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:42 [2] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+committed
+2023/07/05 17:54:42 0: client new get 0
+2023/07/05 17:54:42 send Get PRC call to [3]
+2023/07/05 17:54:42 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:42 follower [4] begin to commit
+2023/07/05 17:54:42 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 1859787205942695265}]
+2023/07/05 17:54:42 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:42 [4] receive apply message
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+committed
+2023/07/05 17:54:42 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:42 follower [3] begin to commit
+2023/07/05 17:54:42 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:42 [3] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+committed
+2023/07/05 17:54:43 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:43 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:43 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:43 [2] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+committed
+2023/07/05 17:54:43 0: client new append x 0 5 y
+2023/07/05 17:54:43 send PutAppend PRC call to [3]
+2023/07/05 17:54:43 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:43 follower [4] begin to commit
+2023/07/05 17:54:43 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:43 [4] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+2023/07/05 17:54:43 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 5 y) 1857189340963605452}]
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+committed
+2023/07/05 17:54:43 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:43 follower [3] begin to commit
+2023/07/05 17:54:43 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:43 [3] receive apply message
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+committed
+2023/07/05 17:54:43 [1] begin election at term [8]
+2023/07/05 17:54:43 [1] switch from [Candidate] to [Follower]
+2023/07/05 17:54:43 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:43 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:43 [0] begin election at term [8]
+2023/07/05 17:54:43 [1] vote for [0]
+2023/07/05 17:54:43 [0] receive vote from [1]!
+2023/07/05 17:54:43 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+committed
+2023/07/05 17:54:43 [2] receive apply message
+2023/07/05 17:54:43 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:43 follower [4] begin to commit
+2023/07/05 17:54:43 0: client new append x 0 6 y
+2023/07/05 17:54:43 send PutAppend PRC call to [3]
+2023/07/05 17:54:43 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+committed
+2023/07/05 17:54:43 [4] receive apply message
+2023/07/05 17:54:43 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 6 y) 4336275564403312188}]
+2023/07/05 17:54:43 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:43 follower [3] begin to commit
+2023/07/05 17:54:43 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:43 [3] receive apply message
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+committed
+2023/07/05 17:54:43 wait for partitioner
+2023/07/05 17:54:43 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:43 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:43 [0] begin election at term [9]
+2023/07/05 17:54:43 [0] switch from [Candidate] to [Follower]
+2023/07/05 17:54:43 [1] vote for [0]
+2023/07/05 17:54:43 [0] receive vote from [1]!
+2023/07/05 17:54:44 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:44 [2] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+committed
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 follower [4] begin to commit
+2023/07/05 17:54:44 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:44 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:44 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+2023/07/05 17:54:44 [2] switch from [Leader] to [Follower]
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+committed
+2023/07/05 17:54:44 [4] receive apply message
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 follower [3] begin to commit
+2023/07/05 17:54:44 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:44 [3] receive apply message
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+committed
+2023/07/05 17:54:44 [2] begin election at term [10]
+2023/07/05 17:54:44 [0] vote for [2]
+2023/07/05 17:54:44 [3] vote for [2]
+2023/07/05 17:54:44 [2] receive vote from [0]!
+2023/07/05 17:54:44 [2] receive vote from [3]!
+2023/07/05 17:54:44 [2] server win the leader at term [10]
+2023/07/05 17:54:44 [4] vote for [2]
+2023/07/05 17:54:44 [2] receive vote from [4]!
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] vote for [2]
+2023/07/05 17:54:44 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [2] receive vote from [1]!
+2023/07/05 17:54:44 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:44 follower [1] begin to commit
+2023/07/05 17:54:44 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:44 follower [0] begin to commit
+2023/07/05 17:54:44 [1] receive apply message
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] receive apply message
+2023/07/05 17:54:44 [1] receive apply message
+2023/07/05 17:54:44 [1] receive apply message
+2023/07/05 17:54:44 [1] receive apply message
+2023/07/05 17:54:44 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:44 [0] receive apply message
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+2023/07/05 17:54:44 [0] receive apply message
+4     {Get 0  554516802077946386}
+2023/07/05 17:54:44 [0] receive apply message
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:44 log content of [0] :
+0     <nil>
+2023/07/05 17:54:44 [0] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+committed
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+committed
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:44 wait for clients
+2023/07/05 17:54:44 read from clients 0
+2023/07/05 17:54:44 Check 7 for client 0
+2023/07/05 17:54:44 send Get PRC call to [0]
+2023/07/05 17:54:44 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 3644108822959830350}]
+2023/07/05 17:54:45 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+committed
+2023/07/05 17:54:45 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 [2] receive apply message
+2023/07/05 17:54:45 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [1] begin to commit
+2023/07/05 17:54:45 Iteration 1
+2023/07/05 17:54:45 log content of [1] :
+0     <nil>
+2023/07/05 17:54:45 [1] receive apply message
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:45 [3] receive heartbeat rpc from [2] 
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:45 follower [3] begin to commit
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:45 follower [0] begin to commit
+2023/07/05 17:54:45 log content of [3] :
+2023/07/05 17:54:45 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [4] begin to commit
+2023/07/05 17:54:45 send PutAppend PRC call to [0]
+2023/07/05 17:54:45 log content of [0] :
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:45 [3] receive apply message
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+2023/07/05 17:54:45 log content of [4] :
+0     <nil>
+2023/07/05 17:54:45 [0] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:45 [4] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+committed
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+committed
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+committed
+2023/07/05 17:54:45 send PutAppend PRC call to [1]
+2023/07/05 17:54:45 send PutAppend PRC call to [2]
+2023/07/05 17:54:45 [2] begin agreement on  cmd [{%!d(string=Put) %!d(string=0) %!d(string=) 1847975869281068185}]
+2023/07/05 17:54:45 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+committed
+2023/07/05 17:54:45 [2] receive apply message
+2023/07/05 17:54:45 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [1] begin to commit
+2023/07/05 17:54:45 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [0] begin to commit
+2023/07/05 17:54:45 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [3] begin to commit
+2023/07/05 17:54:45 0: client new get 0
+2023/07/05 17:54:45 log content of [3] :
+0     <nil>
+2023/07/05 17:54:45 send Get PRC call to [2]
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+committed
+2023/07/05 17:54:45 [1] receive apply message
+2023/07/05 17:54:45 log content of [0] :
+0     <nil>
+2023/07/05 17:54:45 [0] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:45 [4]1     {Get 0  2261473208116330812}
+ receive heartbeat rpc from [2] 
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:45 follower [4] begin to commit
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+2023/07/05 17:54:45 log content of [1] :
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:45 log content of [4] :
+1     {Get 0  732747688581202050}
+0     <nil>
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:45 [4] receive apply message
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:45 [3] receive apply message
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:45 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 4186600923651736005}]
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+committed
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+committed
+2023/07/05 17:54:45 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+committed
+2023/07/05 17:54:45 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [0] begin to commit
+2023/07/05 17:54:45 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [1] begin to commit
+2023/07/05 17:54:45 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [4] begin to commit
+2023/07/05 17:54:45 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [3] begin to commit
+2023/07/05 17:54:45 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:45 log content of [0] :
+1     {Get 0  2261473208116330812}
+0     <nil>
+2023/07/05 17:54:45 [1] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:45 log content of [4] :
+4     {Append 0 x 0 2 y 3107783560292028250}
+2023/07/05 17:54:45 [4] receive apply message
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+2023/07/05 17:54:45 log content of [3] :
+2023/07/05 17:54:45 [3] receive apply message
+7     {Get 0  1859787205942695265}
+2023/07/05 17:54:45 [2] receive apply message
+7     {Append 0 x 0 5 y 1857189340963605452}
+1     {Append 0 x 0 0 y 1068306093564328787}
+7     {Append 0 x 0 6 y 4336275564403312188}
+2023/07/05 17:54:45 [0] receive apply message
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+committed
+4     {Append 0 x 0 1 y 937020787766147935}
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:45 0: client new append x 0 0 y
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:45 send PutAppend PRC call to [2]
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+committed
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:45 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 0 y) 2384809560646444563}]
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+committed
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+committed
+2023/07/05 17:54:45 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [4] begin to commit
+2023/07/05 17:54:45 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+committed
+2023/07/05 17:54:45 [2] receive apply message
+2023/07/05 17:54:45 0: client new append x 0 1 y
+2023/07/05 17:54:45 send PutAppend PRC call to [2]
+2023/07/05 17:54:45 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 1 y) 1367974689745867156}]
+2023/07/05 17:54:45 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 follower [1] begin to commit
+2023/07/05 17:54:45 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+committed
+2023/07/05 17:54:45 [4] receive apply message
+2023/07/05 17:54:45 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 follower [0] begin to commit
+2023/07/05 17:54:45 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 follower [3] begin to commit
+2023/07/05 17:54:45 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+committed
+10     {Append 0 x 0 1 y 1367974689745867156}
+2023/07/05 17:54:45 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+committed
+10     {Append 0 x 0 1 y 1367974689745867156}
+2023/07/05 17:54:45 [1] receive apply message
+2023/07/05 17:54:45 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:45 [3] receive apply message
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:45 [0] receive apply message
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+committed
+10     {Append 0 x 0 1 y 1367974689745867156}
+2023/07/05 17:54:45 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+committed
+2023/07/05 17:54:45 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 follower [4] begin to commit
+2023/07/05 17:54:45 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:45 follower [3] begin to commit
+2023/07/05 17:54:45 follower [0] begin to commit
+2023/07/05 17:54:45 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:45 [2] receive apply message
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:45 [0] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+2023/07/05 17:54:45 log content of [4] :
+4     {Get 0  2831900303891675981}
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:45 [3] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:45 [4] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:45 [1] receive heartbeat rpc from [2] 
+4     {Append 0 x 0 2 y 3107783560292028250}
+2023/07/05 17:54:45 follower [1] begin to commit
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:45 log content of [0] :
+4     {Append 0 x 0 3 y 3931468322727474328}
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:45 log content of [1] :
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:45 [1] receive apply message
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+7     {Append 0 x 0 4 y 4582735032443569800}
+2023/07/05 17:54:45 0: client new get 0
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+committed
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:45 send Get PRC call to [2]
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+committed
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+2023/07/05 17:54:45 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 536459697755451546}]
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+committed
+committed
+2023/07/05 17:54:45 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:45 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:46 [2] receive apply message
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+committed
+2023/07/05 17:54:46 0: client new get 0
+2023/07/05 17:54:46 send Get PRC call to [2]
+2023/07/05 17:54:46 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 4087157509495511081}]
+2023/07/05 17:54:46 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [3] begin to commit
+2023/07/05 17:54:46 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:46 [0] receive heartbeat rpc from [2] 
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:46 follower [0] begin to commit
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+committed
+2023/07/05 17:54:46 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+committed
+2023/07/05 17:54:46 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [4] begin to commit
+2023/07/05 17:54:46 [3] receive apply message
+2023/07/05 17:54:46 [0] receive apply message
+2023/07/05 17:54:46 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [1] begin to commit
+2023/07/05 17:54:46 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+2023/07/05 17:54:46 log content of [1] :
+10     {Get 0  3644108822959830350}
+2023/07/05 17:54:46 [1] receive apply message
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+2023/07/05 17:54:46 [4] receive apply message
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+committed
+2023/07/05 17:54:46 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+committed
+2023/07/05 17:54:46 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [1] begin to commit
+2023/07/05 17:54:46 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [0] begin to commit
+2023/07/05 17:54:46 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 [1] receive apply message
+2023/07/05 17:54:46 log content of [0] :
+0     <nil>
+2023/07/05 17:54:46 log content of [1] :
+1     {Put 0  3416685804369474116}
+0     <nil>
+2023/07/05 17:54:46 follower [3] begin to commit
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+2023/07/05 17:54:46 [2] receive apply message
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+2023/07/05 17:54:46 [0] receive apply message
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+2023/07/05 17:54:46 log content of [3] :
+10     {Get 0  536459697755451546}
+0     <nil>
+2023/07/05 17:54:46 [3] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+10     {Get 0  4087157509495511081}
+committed
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:46 0: client new append x 0 2 y
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:46 send PutAppend PRC call to [2]
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+committed
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+2023/07/05 17:54:46 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 2 y) 341525042585271436}]
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+committed
+2023/07/05 17:54:46 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+2023/07/05 17:54:46 [0] receive heartbeat rpc from [2] 
+10     {Append 0 x 0 0 y 2384809560646444563}
+2023/07/05 17:54:46 follower [0] begin to commit
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+committed
+2023/07/05 17:54:46 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+2023/07/05 17:54:46 [1] receive heartbeat rpc from [2] 
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+2023/07/05 17:54:46 follower [1] begin to commit
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+2023/07/05 17:54:46 [0] receive apply message
+committed
+2023/07/05 17:54:46 [2] receive apply message
+2023/07/05 17:54:46 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [3] begin to commit
+2023/07/05 17:54:46 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+2023/07/05 17:54:46 0: client new append x 0 3 y
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+committed
+2023/07/05 17:54:46 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:46 send PutAppend PRC call to [2]
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:46 [1] receive apply message
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+2023/07/05 17:54:46 [3] receive apply message
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {A2023/07/05 17:54:46 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 3 y) 1773011314804193354}]
+ppend 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+committed
+2023/07/05 17:54:46 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+committed
+2023/07/05 17:54:46 [2] receive apply message
+2023/07/05 17:54:46 0: client new append x 0 4 y
+2023/07/05 17:54:46 send PutAppend PRC call to [2]
+2023/07/05 17:54:46 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [1] begin to commit
+2023/07/05 17:54:46 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 4 y) 3813153296369429198}]
+2023/07/05 17:54:46 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [0] begin to commit
+2023/07/05 17:54:46 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 433627556440332023/07/05 17:54:46 [3] receive heartbeat rpc from [2] 
+12188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+2023/07/05 17:54:46 follower [3] begin to commit
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+committed
+2023/07/05 17:54:46 [1] receive apply message
+2023/07/05 17:54:46 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+committed
+2023/07/05 17:54:46 log content of [3] :
+2023/07/05 17:54:46 [0] receive apply message
+2023/07/05 17:54:46 [3] receive apply message
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+committed
+2023/07/05 17:54:46 [4] begin election at term [11]
+2023/07/05 17:54:46 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+committed
+2023/07/05 17:54:46 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [0] begin to commit
+2023/07/05 17:54:46 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [1] begin to commit
+2023/07/05 17:54:46 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:46 follower [3] begin to commit
+2023/07/05 17:54:46 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:46 [2] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+2023/07/05 17:54:46 [0] receive apply message
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+2023/07/05 17:54:46 log content of [3] :
+10     {Get 0  536459697755451546}
+2023/07/05 17:54:46 [3] receive apply message
+10     {Get 0  4087157509495511081}
+2023/07/05 17:54:46 log content of [1] :
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+2023/07/05 17:54:46 [1] receive apply message
+10     {Append 0 x 0 4 y 3813153296369429198}
+committed
+2023/07/05 17:54:46 0: client new append x 0 5 y
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:46 send PutAppend PRC call to [2]
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     2023/07/05 17:54:46 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 5 y) 1196622942777658576}]
+{Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+committed
+2023/07/05 17:54:46 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:46 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+2023/07/05 17:54:47 [2] receive apply message
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 02023/07/05 17:54:47 0: client new get 0
+2023/07/05 17:54:47 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 follower [0] begin to commit
+ x 0 4 y 3813153296369429198}
+2023/07/05 17:54:47 send Get PRC call to [2]
+10     {Append 0 x 0 5 y 1196622942777658576}
+committed
+2023/07/05 17:54:47 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:47 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 3684470633577790779}]
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+2023/07/05 17:54:47 [0] receive apply message
+10     {Put 0  1847975869281068185}
+2023/07/05 17:54:47 [1] receive heartbeat rpc from [2] 
+10     {Get 0  4186600923651736005}
+2023/07/05 17:54:47 follower [1] begin to commit
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+committed
+2023/07/05 17:54:47 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 follower [3] begin to commit
+2023/07/05 17:54:47 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:47 log content of [3] :
+1     {Get 0  2261473208116330812}
+0     <nil>
+2023/07/05 17:54:47 [1] receive apply message
+2023/07/05 17:54:47 [3] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+committed
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+committed
+10     {Get 0  3684470633577790779}
+2023/07/05 17:54:47 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 log content of [2] :
+0     <nil>
+2023/07/05 17:54:47 [2] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+committed
+2023/07/05 17:54:47 0: client new append x 0 6 y
+2023/07/05 17:54:47 send PutAppend PRC call to [2]
+2023/07/05 17:54:47 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 6 y) 3328206547184365132}]
+2023/07/05 17:54:47 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 follower [0] begin to commit
+2023/07/05 17:54:47 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 follower [1] begin to commit
+2023/07/05 17:54:47 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:47 log content of [1] :
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:47 [1] receive apply message
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:47 [0] receive apply message
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:47 [3] receive appendEntry rpc from [2] 
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:47 follower [3] begin to commit
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+committed
+2023/07/05 17:54:47 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:47 [3] receive apply message
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+committed
+10     {Append 0 x 0 6 y 3328206547184365132}
+2023/07/05 17:54:47 [4] begin election at term [12]
+2023/07/05 17:54:47 [4] switch from [Candidate] to [Follower]
+2023/07/05 17:54:47 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 [2] switch from [Leader] to [Follower]
+2023/07/05 17:54:47 [2] begin election at term [13]
+2023/07/05 17:54:47 [3] vote for [2]
+2023/07/05 17:54:47 [4] vote for [2]
+2023/07/05 17:54:47 [0] vote for [2]
+2023/07/05 17:54:47 [2] receive vote from [3]!
+2023/07/05 17:54:47 [2] receive vote from [4]!
+2023/07/05 17:54:47 [2] server win the leader at term [13]
+2023/07/05 17:54:47 [2] receive vote from [0]!
+2023/07/05 17:54:47 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 follower [0] begin to commit
+2023/07/05 17:54:47 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 follower [3] begin to commit
+2023/07/05 17:54:47 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:47 log content of [0] :
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:47 log content of [3] :
+4     {Append 0 x 0 3 y 3931468322727474328}
+0     <nil>
+2023/07/05 17:54:47 [3] receive apply message
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:47 [0] receive apply message
+7     {Append 0 x 0 4 y 4582735032443569800}
+2023/07/05 17:54:47 [2] receive apply message
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+2023/07/05 17:54:47 0: client new append x 0 7 y
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+2023/07/05 17:54:47 send PutAppend PRC call to [2]
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+committed
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:47 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 7 y) 4592137128682214199}]
+7     {Append 0 x 0 4 y 4582735032443569800}
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+committed
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+committed
+2023/07/05 17:54:47 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 follower [4] begin to commit
+2023/07/05 17:54:47 [4] receive apply message
+2023/07/05 17:54:47 [4] receive apply message
+2023/07/05 17:54:47 [4] receive apply message
+2023/07/05 17:54:47 [4] receive apply message
+2023/07/05 17:54:47 [4] receive apply message
+2023/07/05 17:54:47 [4] receive apply message
+2023/07/05 17:54:47 log content of [4] :
+0     <nil>
+2023/07/05 17:54:47 [4] receive apply message
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+committed
+13     {Append 0 x 0 7 y 4592137128682214199}
+2023/07/05 17:54:47 [1] begin election at term [11]
+2023/07/05 17:54:47 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:47 [2] receive apply message
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+committed
+2023/07/05 17:54:47 0: client new get 0
+2023/07/05 17:54:47 send Get PRC call to [2]
+2023/07/05 17:54:47 [4] receive heartbeat rpc from [2] 
+2023/07/05 17:54:47 follower [4] begin to commit
+2023/07/05 17:54:47 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 3421959721955372668}]
+2023/07/05 17:54:47 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+2023/07/05 17:54:47 [0] receive heartbeat rpc from [2] 
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+2023/07/05 17:54:47 follower [0] begin to commit
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+2023/07/05 17:54:47 [4] receive apply message
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+2023/07/05 17:54:47 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:47 follower [3] begin to commit
+2023/07/05 17:54:47 log content of [0] :
+2023/07/05 17:54:47 [0] receive apply message
+2023/07/05 17:54:47 log content of [3] :
+13     {Append 0 x 0 7 y 4592137128682214199}
+0     <nil>
+0     <nil>
+committed
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:47 [3] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+committed
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+committed
+13     {Get 0  3421959721955372668}
+2023/07/05 17:54:48 [4] receive appendEntry rpc from [2] 
+2023/07/05 17:54:48 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:48 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:48 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:48 [2] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+2023/07/05 17:54:48 0: client new append x 0 8 y
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+committed
+2023/07/05 17:54:48 send PutAppend PRC call to [2]
+2023/07/05 17:54:48 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:48 follower [0] begin to commit
+2023/07/05 17:54:48 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 8 y) 1941070097924088222}]
+2023/07/05 17:54:48 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 2023/07/05 17:54:48 [0] receive apply message
+x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+2023/07/05 17:54:48 [1] receive appendEntry rpc from [2] 
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+2023/07/05 17:54:48 [3] receive appendEntry rpc from [2] 
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+committed
+2023/07/05 17:54:48 follower [3] begin to commit
+2023/07/05 17:54:48 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:48 [3] receive apply message
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+committed
+13     {Append 0 x 0 8 y 1941070097924088222}
+2023/07/05 17:54:48 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:48 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:48 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:48 [1] switch from [Candidate] to [Follower]
+2023/07/05 17:54:48 follower [1] begin to commit
+2023/07/05 17:54:48 [1] receive apply message
+2023/07/05 17:54:48 [1] receive apply message
+2023/07/05 17:54:48 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+2023/07/05 17:54:48 [1] receive apply message
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+committed
+13     {Append 0 x 0 8 y 1941070097924088222}
+2023/07/05 17:54:48 [4] begin election at term [14]
+2023/07/05 17:54:48 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:48 [2] receive apply message
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+committed
+2023/07/05 17:54:48 0: client new get 0
+2023/07/05 17:54:48 send Get PRC call to [2]
+2023/07/05 17:54:48 [2] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 2938941383392823257}]
+2023/07/05 17:54:48 [0] receive heartbeat rpc from [2] 
+2023/07/05 17:54:48 follower [0] begin to commit
+2023/07/05 17:54:48 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:48 follower [1] begin to commit
+2023/07/05 17:54:48 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:48 [3] receive appendEntry rpc from [2] 
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:48 follower [3] begin to commit
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:48 log content of [1] :
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:48 log content of [3] :
+2023/07/05 17:54:48 [3] receive apply message
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+2023/07/05 17:54:48 [1] receive apply message
+4     {Get 0  2831900303891675981}
+2023/07/05 17:54:48 [0] receive apply message
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+committed
+13     {Get 0  2938941383392823257}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+committed
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+committed
+2023/07/05 17:54:48 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:48 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:48 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:49 [4] begin election at term [15]
+2023/07/05 17:54:49 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+2023/07/05 17:54:49 [0] receive heartbeat rpc from [2] 
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+2023/07/05 17:54:49 follower [0] begin to commit
+2023/07/05 17:54:49 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:49 follower [1] begin to commit
+2023/07/05 17:54:49 [2] receive apply message
+2023/07/05 17:54:49 log content of [1] :
+2023/07/05 17:54:49 [1] receive apply message
+2023/07/05 17:54:49 log content of [0] :
+2023/07/05 17:54:49 [0] receive apply message
+committed
+2023/07/05 17:54:49 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:49 follower [3] begin to commit
+0     <nil>
+2023/07/05 17:54:49 0: client new append x 0 9 y
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+2023/07/05 17:54:49 send PutAppend PRC call to [2]
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+2023/07/05 17:54:49 log content of [3] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:49 [3] receive apply message
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+2023/07/05 17:54:49 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 9 y) 3381074465153670204}]
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+committed
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+committed
+2023/07/05 17:54:49 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:49 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:49 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+13     {Append 0 x 0 9 y 3381074465153670204}
+committed
+2023/07/05 17:54:49 [2] receive apply message
+2023/07/05 17:54:49 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:49 follower [1] begin to commit
+2023/07/05 17:54:49 0: client new append x 0 10 y
+2023/07/05 17:54:49 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:49 follower [3] begin to commit
+2023/07/05 17:54:49 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+2023/07/05 17:54:49 send PutAppend PRC call to [2]
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+13     {Append 0 x 0 9 y 338107446512023/07/05 17:54:49 log content of [3] :
+53670204}
+committed
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+2023/07/05 17:54:49 [3] receive apply message
+1     {Get 0  2261473208116330812}
+2023/07/05 17:54:49 [1] receive apply message
+1     {Append 0 x 0 0 y 1068306093564328787}
+2023/07/05 17:54:49 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 10 y) 1059169066869293457}]
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+13     {Append 0 x 0 9 y 3381074465153670204}
+committed
+2023/07/05 17:54:49 [4] begin election at term [16]
+2023/07/05 17:54:49 [4] switch from [Candidate] to [Follower]
+2023/07/05 17:54:49 [0] begin election at term [14]
+2023/07/05 17:54:49 [0] switch from [Candidate] to [Follower]
+2023/07/05 17:54:49 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:49 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:49 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:49 [2] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+13     {Append 0 x 0 9 y 3381074465153670204}
+13     {Append 0 x 0 10 y 1059169066869293457}
+committed
+2023/07/05 17:54:49 0: client new append x 0 11 y
+2023/07/05 17:54:49 send PutAppend PRC call to [2]
+2023/07/05 17:54:49 [2] begin agreement on  cmd [{%!d(string=Append) %!d(string=0) %!d(string=x 0 11 y) 895425189817829046}]
+2023/07/05 17:54:49 [1] receive heartbeat rpc from [2] 
+2023/07/05 17:54:49 follower [1] begin to commit
+2023/07/05 17:54:49 [3] receive heartbeat rpc from [2] 
+2023/07/05 17:54:49 follower [3] begin to commit
+2023/07/05 17:54:49 log content of [1] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+2023/07/05 17:54:49 log content of [3] :
+2023/07/05 17:54:49 [3] receive apply message
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+2023/07/05 17:54:49 [1] receive apply message
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+13     {Append 0 x 0 9 y 3381074465153670204}
+13     {Append 0 x 0 10 y 1059169066869293457}
+committed
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+13     {Append 0 x 0 9 y 3381074465153670204}
+13     {Append 0 x 0 10 y 1059169066869293457}
+committed
+2023/07/05 17:54:50 [0] begin election at term [17]
+2023/07/05 17:54:50 [4] vote for [0]
+2023/07/05 17:54:50 [0] receive vote from [4]!
+2023/07/05 17:54:50 [3] receive appendEntry rpc from [2] 
+2023/07/05 17:54:50 [1] receive appendEntry rpc from [2] 
+2023/07/05 17:54:50 log content of [2] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+2023/07/05 17:54:50 [2] receive apply message
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+13     {Append 0 x 0 9 y 3381074465153670204}
+13     {Append 0 x 0 10 y 1059169066869293457}
+13     {Append 0 x 0 11 y 895425189817829046}
+2023/07/05 17:54:50 0: client new get 0
+committed
+2023/07/05 17:54:50 [0] receive appendEntry rpc from [2] 
+2023/07/05 17:54:50 send Get PRC call to [2]
+2023/07/05 17:54:50 [2] switch from [Leader] to [Follower]
+2023/07/05 17:54:50 send Get PRC call to [3]
+2023/07/05 17:54:50 send Get PRC call to [4]
+2023/07/05 17:54:50 [2] begin election at term [18]
+2023/07/05 17:54:50 [0] switch from [Candidate] to [Follower]
+2023/07/05 17:54:50 [0] vote for [2]
+2023/07/05 17:54:50 [2] receive vote from [0]!
+2023/07/05 17:54:50 send Get PRC call to [0]
+2023/07/05 17:54:50 [4] begin election at term [18]
+2023/07/05 17:54:50 [4] switch from [Candidate] to [Follower]
+2023/07/05 17:54:50 send Get PRC call to [1]
+2023/07/05 17:54:50 send Get PRC call to [2]
+2023/07/05 17:54:50 send Get PRC call to [3]
+2023/07/05 17:54:50 send Get PRC call to [4]
+2023/07/05 17:54:50 send Get PRC call to [0]
+2023/07/05 17:54:50 send Get PRC call to [1]
+2023/07/05 17:54:50 [1] begin election at term [14]
+2023/07/05 17:54:50 [3] vote for [1]
+2023/07/05 17:54:50 [1] switch from [Candidate] to [Follower]
+2023/07/05 17:54:50 [1] receive vote from [3]!
+2023/07/05 17:54:50 send Get PRC call to [2]
+2023/07/05 17:54:50 send Get PRC call to [3]
+2023/07/05 17:54:50 send Get PRC call to [4]
+2023/07/05 17:54:50 [2] begin election at term [19]
+2023/07/05 17:54:50 [0] vote for [2]
+2023/07/05 17:54:50 [2] receive vote from [0]!
+2023/07/05 17:54:51 [4] begin election at term [19]
+2023/07/05 17:54:51 [4] switch from [Candidate] to [Follower]
+2023/07/05 17:54:51 send Get PRC call to [0]
+2023/07/05 17:54:51 wait for partitioner
+2023/07/05 17:54:51 send Get PRC call to [1]
+2023/07/05 17:54:51 send Get PRC call to [2]
+2023/07/05 17:54:51 send Get PRC call to [3]
+2023/07/05 17:54:51 send Get PRC call to [4]
+2023/07/05 17:54:51 send Get PRC call to [0]
+2023/07/05 17:54:51 send Get PRC call to [1]
+2023/07/05 17:54:51 send Get PRC call to [2]
+2023/07/05 17:54:51 [1] begin election at term [19]
+2023/07/05 17:54:51 [4] vote for [1]
+2023/07/05 17:54:51 [3] vote for [1]
+2023/07/05 17:54:51 [1] receive vote from [4]!
+2023/07/05 17:54:51 [1] receive vote from [3]!
+2023/07/05 17:54:51 [1] server win the leader at term [19]
+2023/07/05 17:54:51 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:51 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:51 send Get PRC call to [3]
+2023/07/05 17:54:51 [1] begin agreement on  cmd [{%!d(string=Get) %!d(string=0) %!d(string=) 2477676003836911732}]
+2023/07/05 17:54:51 [2] begin election at term [20]
+2023/07/05 17:54:51 [0] vote for [2]
+2023/07/05 17:54:51 [2] receive vote from [0]!
+2023/07/05 17:54:51 [2] receive appendEntry rpc from [1] 
+2023/07/05 17:54:51 [3] receive appendEntry rpc from [1] 
+2023/07/05 17:54:51 [1] switch from [Leader] to [Follower]
+2023/07/05 17:54:51 [4] receive appendEntry rpc from [1] 
+2023/07/05 17:54:51 follower [4] begin to commit
+2023/07/05 17:54:51 [0] receive appendEntry rpc from [1] 
+2023/07/05 17:54:51 [4] receive apply message
+2023/07/05 17:54:51 [4] receive apply message
+2023/07/05 17:54:51 [4] receive apply message
+2023/07/05 17:54:51 [4] receive apply message
+2023/07/05 17:54:51 log content of [4] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+2023/07/05 17:54:51 [4] receive apply message
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+13     {Append 0 x 0 9 y 3381074465153670204}
+13     {Append 0 x 0 10 y 1059169066869293457}
+committed
+13     {Append 0 x 0 11 y 895425189817829046}
+19     {Get 0  2477676003836911732}
+2023/07/05 17:54:51 [1] begin election at term [21]
+2023/07/05 17:54:51 [0] vote for [1]
+2023/07/05 17:54:51 [1] receive vote from [0]!
+2023/07/05 17:54:51 [2] switch from [Candidate] to [Follower]
+2023/07/05 17:54:51 [2] vote for [1]
+2023/07/05 17:54:51 [3] vote for [1]
+2023/07/05 17:54:51 [4] vote for [1]
+2023/07/05 17:54:51 [1] receive vote from [3]!
+2023/07/05 17:54:51 [1] receive vote from [2]!
+2023/07/05 17:54:51 [1] server win the leader at term [21]
+2023/07/05 17:54:51 [1] receive vote from [4]!
+2023/07/05 17:54:51 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:51 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:51 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:51 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [2] receive appendEntry rpc from [1] 
+2023/07/05 17:54:52 [0] receive appendEntry rpc from [1] 
+2023/07/05 17:54:52 follower [0] begin to commit
+2023/07/05 17:54:52 [0] receive apply message
+2023/07/05 17:54:52 [0] receive apply message
+2023/07/05 17:54:52 log content of [0] :
+0     <nil>
+1     {Put 0  3416685804369474116}
+1     {Get 0  732747688581202050}
+1     {Get 0  2261473208116330812}
+1     {Append 0 x 0 0 y 1068306093564328787}
+4     {Append 0 x 0 1 y 937020787766147935}
+4     {Append 0 x 0 2 y 3107783560292028250}
+4     {Get 0  554516802077946386}
+4     {Get 0  2831900303891675981}
+4     {Append 0 x 0 3 y 3931468322727474328}
+7     {Append 0 x 0 4 y 4582735032443569800}
+7     {Get 0  1859787205942695265}
+7     {Append 0 x 0 5 y 1857189340963605452}
+7     {Append 0 x 0 6 y 4336275564403312188}
+10     {Get 0  3644108822959830350}
+10     {Put 0  1847975869281068185}
+10     {Get 0  4186600923651736005}
+10     {Append 0 x 0 0 y 2384809560646444563}
+10     {Append 0 x 0 1 y 1367974689745867156}
+10     {Get 0  536459697755451546}
+10     {Get 0  4087157509495511081}
+10     {Append 0 x 0 2 y 341525042585271436}
+10     {Append 0 x 0 3 y 1773011314804193354}
+10     {Append 0 x 0 4 y 3813153296369429198}
+10     {Append 0 x 0 5 y 1196622942777658576}
+10     {Get 0  3684470633577790779}
+10     {Append 0 x 0 6 y 3328206547184365132}
+13     {Append 0 x 0 7 y 4592137128682214199}
+13     {Get 0  3421959721955372668}
+13     {Append 0 x 0 8 y 1941070097924088222}
+13     {Get 0  2938941383392823257}
+13     {Append 0 x 0 9 y 3381074465153670204}
+13     {Append 0 x 0 10 y 1059169066869293457}
+committed
+13     {Append 0 x 0 11 y 895425189817829046}
+19     {Get 0  2477676003836911732}
+2023/07/05 17:54:52 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 wait for clients
+2023/07/05 17:54:52 read from clients 0
+2023/07/05 17:54:52 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:52 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [2] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [0] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [4] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [3] receive heartbeat rpc from [1] 
+2023/07/05 17:54:53 [2] receive heartbeat rpc from [1] 

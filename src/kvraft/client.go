@@ -3,10 +3,12 @@ package kvraft
 import (
 	"../labrpc"
 	"sync"
+	"time"
 )
 import "crypto/rand"
 import "math/big"
 
+const REQUESTTIMEOUT = 1000 //heartbeat的频率为200ms，所以必须大于200ms
 type Clerk struct {
 	//TODO:为什么这里要保存ClientEnd?clerk不是和kvserver交互吗？
 	//猜测：ClientEnd就是kvserver
@@ -41,6 +43,20 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 // the types of args and reply (including whether they are pointers)
 // must match the declared types of the RPC handler function's
 // arguments. and reply must be passed as a pointer.
+func (ck *Clerk) sendGetRPC(leaderId int, args *GetArgs, reply *GetReply) bool {
+	result := make(chan bool, 1)
+	go func() {
+		ok := ck.servers[leaderId].Call("KVServer.Get", args, reply)
+		result <- ok
+	}()
+	select {
+	case <-time.After(REQUESTTIMEOUT * time.Millisecond):
+		return false
+	case res := <-result:
+		return res
+	}
+}
+
 func (ck *Clerk) Get(key string) string {
 
 	// You will have to modify this function.
@@ -55,13 +71,16 @@ func (ck *Clerk) Get(key string) string {
 		ck.mu.Lock()
 		leaderId := ck.leader
 		ck.mu.Unlock()
-		ok := ck.servers[leaderId].Call("KVServer.Get", &args, &reply)
+		DPrintf("send Get PRC call to [%d]", leaderId)
+		ok := ck.sendGetRPC(leaderId, &args, &reply)
 		if !ok || reply.Err == ErrWrongLeader {
+			DPrintf("[%d] is not leader", leaderId)
 			ck.mu.Lock()
 			ck.leader = (ck.leader + 1) % len(ck.servers)
 			ck.mu.Unlock()
 			//time.Sleep(50 * time.Millisecond)
 		} else {
+			DPrintf("clerk receive Get reply from kvserver [%d]", leaderId)
 			break
 		}
 	}
@@ -88,19 +107,36 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 	var reply PutAppendReply
 	// 就算发给正确的leader，也有可能出现丢包、延迟、宕机等情况
 	for {
-		reply = PutAppendReply{}
 		ck.mu.Lock()
+		reply = PutAppendReply{}
 		leaderId := ck.leader
 		ck.mu.Unlock()
-		ok := ck.servers[leaderId].Call("KVServer.PutAppend", &args, &reply)
+		DPrintf("send PutAppend PRC call to [%d]", leaderId)
+		ok := ck.sendPutAppendRPC(leaderId, &args, &reply)
 		if !ok || reply.Err == ErrWrongLeader {
+			DPrintf("[%d] is not leader", leaderId)
 			ck.mu.Lock()
 			ck.leader = (ck.leader + 1) % len(ck.servers)
 			ck.mu.Unlock()
 			//time.Sleep(50 * time.Millisecond)
 		} else {
+			DPrintf("clerk receive PutAppend reply from kvserver [%d]", leaderId)
 			break
 		}
+	}
+}
+
+func (ck *Clerk) sendPutAppendRPC(leaderId int, args *PutAppendArgs, reply *PutAppendReply) bool {
+	result := make(chan bool, 1)
+	go func() {
+		ok := ck.servers[leaderId].Call("KVServer.PutAppend", args, reply)
+		result <- ok
+	}()
+	select {
+	case <-time.After(REQUESTTIMEOUT * time.Millisecond):
+		return false
+	case res := <-result:
+		return res
 	}
 }
 
