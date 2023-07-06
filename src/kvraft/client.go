@@ -78,7 +78,7 @@ func (ck *Clerk) Get(key string) string {
 			ck.mu.Lock()
 			ck.leader = (ck.leader + 1) % len(ck.servers)
 			ck.mu.Unlock()
-			time.Sleep(50 * time.Millisecond)
+			//time.Sleep(50 * time.Millisecond)
 		} else {
 			DPrintf("clerk receive Get reply from kvserver [%d]", leaderId)
 			return reply.Value
@@ -118,7 +118,7 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 			ck.mu.Lock()
 			ck.leader = (ck.leader + 1) % len(ck.servers)
 			ck.mu.Unlock()
-			time.Sleep(50 * time.Millisecond)
+			//time.Sleep(50 * time.Millisecond)
 		} else {
 			DPrintf("clerk receive PutAppend reply from kvserver [%d]", leaderId)
 			break
