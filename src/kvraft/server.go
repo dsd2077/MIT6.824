@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 )
 
-const Debug = 0
+const Debug = 1
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug > 0 {
@@ -49,6 +49,16 @@ type KVServer struct {
 // Clerk会调用Get方法
 func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	// Your code here.
+	// TODO:要不要再这里直接返回？
+	kv.mu.Lock()
+	_, exit := kv.appliedOp[args.Identifier]
+	kv.mu.Unlock()
+	if exit {
+		kv.mu.Lock()
+		*reply = kv.appliedOp[args.Identifier].(GetReply)
+		kv.mu.Unlock()
+		return
+	}
 	op := Op{
 		Op:         "Get",
 		Key:        args.Key,
@@ -70,7 +80,6 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	kv.leader = true
 	kv.leaderTerm = term
 
-	_, exit := kv.appliedOp[op.Identifier]
 	for !exit {
 		kv.cond.Wait()
 		_, exit = kv.appliedOp[op.Identifier]
@@ -84,6 +93,16 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	// Your code here.
+
+	kv.mu.Lock()
+	_, exit := kv.appliedOp[args.Identifier]
+	kv.mu.Unlock()
+	if exit {
+		kv.mu.Lock()
+		*reply = kv.appliedOp[args.Identifier].(PutAppendReply)
+		kv.mu.Unlock()
+		return
+	}
 	op := Op{
 		Op:         args.Op,
 		Key:        args.Key,
@@ -107,8 +126,6 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	kv.mu.Lock()
 	kv.leader = true
 	kv.leaderTerm = term
-
-	_, exit := kv.appliedOp[op.Identifier]
 
 	for !exit {
 		kv.cond.Wait()
