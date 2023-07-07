@@ -19,9 +19,7 @@ package raft
 
 import (
 	"bytes"
-	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"sort"
 	"sync"
@@ -44,6 +42,7 @@ type ApplyMsg struct {
 	CommandValid bool
 	Command      interface{}
 	CommandIndex int
+	CommandTerm  int //接受Command时的任期
 }
 
 type Entry struct {
@@ -62,6 +61,7 @@ const (
 
 const ELECTIONTIMEOUT = 400
 const HEARTTIMEOUT = 200
+const RPCTIMEOUT = 1000
 
 // A Go object implementing a single Raft peer.
 type Raft struct {
@@ -111,33 +111,100 @@ func (rf *Raft) GetState() (int, bool) {
 func (rf *Raft) persist() {
 	// Your code here (2C).
 	// Example:
+	rf.mu.Lock()
 	w := new(bytes.Buffer)
 	e := labgob.NewEncoder(w)
 	e.Encode(rf.currentTerm)
 	e.Encode(rf.votedFor)
 	e.Encode(rf.log)
+	rf.mu.Unlock()
 	data := w.Bytes()
 	rf.persister.SaveRaftState(data)
+
 }
 
 // restore previously persisted state.
-func (rf *Raft) readPersist(data []byte) {
+func (rf *Raft) readPersist(data []byte) bool {
 	if data == nil || len(data) < 1 { // bootstrap without any state?
-		return
+		return true
 	}
 	// Your code here (2C).
 	//Example:
 	r := bytes.NewBuffer(data)
 	d := labgob.NewDecoder(r)
-	var currentTerm
-	var votedFor
-	if d.Decode(&currentTerm) != nil ||
-	  d.Decode(&votedFor) != nil {
-		log.Fatalf("ClientEnd.Call(): decode reply: %v\n", err)
-	} else {
-	 rf.xxx = xxx
-	 rf.yyy = yyy
+	var currentTerm int
+	var votedFor int
+	var log []Entry
+	if err := d.Decode(&currentTerm); err != nil {
+		DPrintf("ClientEnd.Call(): decode reply: %v\n", err)
+		return false
 	}
+	if err := d.Decode(&votedFor); err != nil {
+		DPrintf("ClientEnd.Call(): decode reply: %v\n", err)
+		return false
+	}
+	if err := d.Decode(&log); err != nil {
+		DPrintf("ClientEnd.Call(): decode reply: %v\n", err)
+		return false
+	}
+	rf.currentTerm = currentTerm
+	rf.votedFor = votedFor
+	rf.log = log
+	return true
+}
+
+type LogCompactionArgs struct {
+	LastIncludedIndex int    //the snapshot replaces all entries up through and including this index
+	LastIncludedTerm  int    //term of lastIncludedIndex
+	Data              []byte //raw bytes of the snapshot chunk, starting at offset
+}
+
+func (rf *Raft) LogCompaction(lastIncludedIndex int, lastIncludedTerm int, snapshot []byte) {
+	// discard the stale log
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	// 创建一个新的切片,才能真正的释放掉原来的数组
+	// 保留lastIncludedIndex这个元素，这样可以保证log中至少有一个元素
+	// 剩余元素个数：len(rf.log)-lastIncludedIndex+firstLogIndex
+	// 细节是魔鬼
+
+	firstLogIndex := rf.log[0].Index
+	newArr := make([]Entry, len(rf.log)-lastIncludedIndex+firstLogIndex)
+	copy(newArr, rf.log[lastIncludedIndex-firstLogIndex:])
+	//原始的数组没有人引用之后，就会被垃圾回收
+	rf.log = newArr
+
+	w := new(bytes.Buffer)
+	e := labgob.NewEncoder(w)
+	e.Encode(rf.currentTerm)
+	e.Encode(rf.votedFor)
+	e.Encode(rf.log)
+	rf.mu.Unlock()
+	state := w.Bytes()
+
+	rf.persister.SaveStateAndSnapshot(state, snapshot)
+}
+
+type InstallSnapShotArgs struct {
+	Term              int    //leader's term
+	LeaderId          int    //so follower can redirect clients
+	LastIncludedIndex int    //the snapshot replaces all entries up through and including this index
+	LastIncludedTerm  int    //term of lastIncludedIndex
+	Offset            int    //byte offset where chunk is positioned in the snapshot file
+	Data              []byte //raw bytes of the snapshot chunk, starting at offset
+	Done              bool   //true if this is the last chunk
+}
+
+type InstallSnapShotReply struct {
+	Term int //currentTerm, for leader to update itself
+}
+
+func (rf *Raft) InstallSnapShot(args *InstallSnapShotArgs, reply *InstallSnapShotReply) {
+
+}
+
+func (rf *Raft) sendInstallSnapShotRPC() {
+
 }
 
 // example RequestVote RPC arguments structure.
@@ -241,12 +308,14 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	if rf.killed() || !rf.isLeader() {
 		return -1, -1, false
 	}
-	DPrintf("[%d] receive cmd [%d]", rf.me, command)
+	//fmt.Printf("[%d] receive cmd [%s]\n", rf.me, command)
 	rf.mu.Lock() //这里需要加锁，如果别的地方把锁给占了，就拿不到锁
 	defer rf.mu.Unlock()
 	//DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, command)
+
+	DPrintf("[%d] begin agreement on  cmd ", rf.me)
 	term := rf.currentTerm
-	index := len(rf.log)
+	index := rf.log[len(rf.log)-1].Index + 1
 	entry := Entry{
 		Index: index,
 		Term:  rf.currentTerm,
@@ -258,28 +327,17 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
-	// 创建一个上下文对象和取消函数
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// 创建一个用于接收结果的通道
 	result := make(chan bool, 1)
 
-	// 启动一个goroutine执行RPC调用
 	go func() {
-		// 在这里执行你的RPC调用
-		ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
-
-		// 假设RPC调用成功并得到结果
+		ok := rf.peers[server].Call("Raft.AppendEntries", args, reply) //TODO:这里为什么会造成数据竞争?这是在读。
 		result <- ok
 	}()
 
 	select {
-	case <-ctx.Done():
-		// 如果超时，则返回false
+	case <-time.After(RPCTIMEOUT * time.Millisecond):
 		return false
 	case res := <-result:
-		// 如果成功接收到结果，则返回结果
 		return res
 	}
 }
@@ -322,38 +380,46 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if len(args.Entries) != 0 {
 		cmdtype = "appendEntry"
 	}
-	DPrintf(
-		"[%d] receive %s rpc from [%d] Term:[%d] PrevlogIndex: [%d] PrevLogTerm: [%d] LeaderCommit: [%d]",
-		rf.me,
-		cmdtype,
-		args.LeaderId,
-		args.Term,
-		args.PrevLogIndex,
-		args.PrevLogTerm,
-		args.LeaderCommit,
-	)
-	if len(args.Entries) != 0 {
-		DPrintf("log entry index from [%d] to [%d]", args.Entries[0].Index, args.Entries[len(args.Entries)-1].Index)
-	}
+	DPrintf("[%d] receive %s rpc from [%d] ", rf.me, cmdtype, args.LeaderId)
+	//DPrintf(
+	//	"[%d] receive %s rpc from [%d] Term:[%d] PrevlogIndex: [%d] PrevLogTerm: [%d] LeaderCommit: [%d]",
+	//	rf.me,
+	//	cmdtype,
+	//	args.LeaderId,
+	//	args.Term,
+	//	args.PrevLogIndex,
+	//	args.PrevLogTerm,
+	//	args.LeaderCommit,
+	//)
+	//if len(args.Entries) != 0 {
+	//DPrintf("log entry index from [%d] to [%d]", args.Entries[0].Index, args.Entries[len(args.Entries)-1].Index)
+	//}
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 		return
 	}
 	rf.lastReceive = time.Now()
 	// case2 : 一致性检查 :日志缺失
-	if len(rf.log) <= args.PrevLogIndex {
+	if rf.log[len(rf.log)-1].Index < args.PrevLogIndex {
 		reply.Success = false
-		reply.ExpectLogIndex = len(rf.log) //应对大量缺失
+		reply.ExpectLogIndex = rf.log[len(rf.log)-1].Index + 1 //应对大量缺失
 		return
 	}
-	if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
-
-		//If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it
-		rf.log = rf.log[:args.PrevLogIndex]
+	//是否存在rf.log[0].Index > args.PrevLogIndex 的情况？
+	//不存在
+	firstLogIndex := rf.log[0].Index
+	if rf.log[args.PrevLogIndex-firstLogIndex].Term != args.PrevLogTerm {
 		// 已经应用到状态机的日志是绝对不会冲突的
 		reply.ExpectLogIndex = rf.lastApplied + 1 //应对大量冲突
-		reply.Success = false
 
+		//If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it
+		// 截掉rf.lastApplied之后所有的元素
+		firstLogIndex := rf.log[0].Index
+		newArr := make([]Entry, rf.lastApplied-firstLogIndex+1)
+		copy(newArr, rf.log[:rf.lastApplied-firstLogIndex+1])
+		//原始的数组没有人引用之后，就会被垃圾回收
+		rf.log = newArr
+		reply.Success = false
 		return
 	}
 	//状态转移
@@ -361,15 +427,21 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.changeState(args.Term, Follower)
 	}
 
-	// 通过一致性检查，将日志追加到log
-	// 先复制
-	copy(rf.log[args.PrevLogIndex+1:], args.Entries)
-	remain := len(rf.log) - (args.PrevLogIndex + 1)
-	// 如果有剩余元素未复制，再采用追加
-	if len(args.Entries) > remain {
-		rf.log = append(rf.log, args.Entries[remain:]...)
+	// TODO:为什么下面的代码会报DATA RACE
+	//for idx := range args.Entries {
+	//	// 先复制,再追加
+	//	if args.Entries[idx].Index-firstLogIndex < len(rf.log) {
+	//		rf.log[args.Entries[idx].Index-firstLogIndex] = args.Entries[idx] //为什么说这里是在写？
+	//	} else {
+	//		rf.log = append(rf.log, args.Entries[idx:]...)
+	//		break
+	//	}
+	//}
+	////不能进行直接追加,一定是先替换再追加
+	copy(rf.log[args.PrevLogIndex+1-firstLogIndex:], args.Entries)
+	if len(args.Entries) > rf.log[len(rf.log)-1].Index-args.PrevLogIndex {
+		rf.log = append(rf.log, args.Entries[rf.log[len(rf.log)-1].Index-args.PrevLogIndex:]...)
 	}
-	//rf.log = append(rf.log, args.Entries...)
 
 	// 提交日志
 	if args.LeaderCommit > rf.commitIndex {
@@ -396,17 +468,20 @@ func (rf *Raft) printEntry() {
 func (rf *Raft) commit(leaderCommit int) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	for rf.commitIndex < leaderCommit && rf.commitIndex < len(rf.log)-1 {
+	firstLogIndex := rf.log[0].Index
+	for rf.commitIndex < leaderCommit && rf.commitIndex < rf.log[len(rf.log)-1].Index {
 		rf.commitIndex++
 		rf.lastApplied++
 		msg := ApplyMsg{
 			CommandValid: true,
-			Command:      rf.log[rf.commitIndex].Cmd,
-			CommandIndex: rf.log[rf.commitIndex].Index,
+			Command:      rf.log[rf.commitIndex-firstLogIndex].Cmd,
+			CommandIndex: rf.log[rf.commitIndex-firstLogIndex].Index,
+			CommandTerm:  rf.log[rf.commitIndex-firstLogIndex].Term,
 		}
 		rf.applyCh <- msg
 	}
-	DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
+	//DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
+	rf.printEntry()
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
@@ -430,7 +505,7 @@ func (rf *Raft) killed() bool {
 
 // 不好好刷算法，连这个算法都写不出来!!
 func (rf *Raft) updateCommitIndex() {
-	rf.matchIndex[rf.me] = len(rf.log) - 1
+	rf.matchIndex[rf.me] = rf.log[len(rf.log)-1].Index
 	copyMatchIndex := make([]int, len(rf.matchIndex))
 	copy(copyMatchIndex, rf.matchIndex)
 	sort.Ints(copyMatchIndex)
@@ -448,22 +523,28 @@ func (rf *Raft) apply() {
 	defer rf.mu.Unlock()
 	// 查看已复制到大部分机器上的最大日志号
 
+	firstLogIndex := rf.log[0].Index
 	for rf.lastApplied < rf.commitIndex {
 		rf.lastApplied++
+
 		msg := ApplyMsg{
 			CommandValid: true,
-			Command:      rf.log[rf.lastApplied].Cmd,
+			Command:      rf.log[rf.lastApplied-firstLogIndex].Cmd,
 			CommandIndex: rf.lastApplied,
+			CommandTerm:  rf.log[rf.lastApplied-firstLogIndex].Term,
 		}
 		rf.applyCh <- msg
 		if rf.lastApplied == rf.commitIndex {
-			DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
+			//DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
+			rf.printEntry()
 		}
 	}
 }
 func (rf *Raft) heartBeat() {
 	for !rf.killed() && rf.isLeader() {
+		rf.persist()
 		go rf.apply()
+
 		rf.mu.Lock()
 		//极端情况：在heartBeat发送的过程中在AppendEntries中发生了状态转移,导致发往各个server中的数据不一致
 		currentTerm := rf.currentTerm
@@ -476,19 +557,38 @@ func (rf *Raft) heartBeat() {
 			go func(server int) {
 				reply := AppendEntriesReply{}
 				rf.mu.Lock()
+				if rf.serverState != Leader {
+					rf.mu.Unlock()
+					return
+				}
+				//DPrintf("[%d] send heart beat to [%d]", rf.me, server)
+
+				// 要发送给follower的日志不存在。
+				firstLogIndex := rf.log[0].Index
+				// 相等时也相当于日志不存在，以初始状态为例：firstLogIndex =0, rf.nextIndex[server] = 1
+				// 发生日志压缩后, firstLogIndex = lastIncludedIndex, 如果rf.nextIndex[server] =lastIncludedIndex，那么无法知道PrevLogIndex是多少
+				if firstLogIndex >= rf.nextIndex[server] {
+					rf.mu.Unlock()
+					rf.sendInstallSnapShotRPC()
+					return
+				}
+
+				// 此时rf.log中至少有两个元素
+				targetIndex := rf.nextIndex[server] - firstLogIndex
 				arg := AppendEntriesArgs{
 					Term:         currentTerm,
 					LeaderId:     rf.me,
-					Entries:      rf.log[rf.nextIndex[server]:], //如果没有更多的日志，则为[]
-					PrevLogIndex: rf.log[rf.nextIndex[server]-1].Index,
-					PrevLogTerm:  rf.log[rf.nextIndex[server]-1].Term,
+					Entries:      rf.log[targetIndex:], //如果没有更多的日志，则为[]  这里可能会越界。为什么？——发送跳的过程中，Leader的状态发生了改变，log被改写
+					PrevLogIndex: rf.log[targetIndex-1].Index,
+					PrevLogTerm:  rf.log[targetIndex-1].Term,
 					LeaderCommit: rf.commitIndex,
 				}
-				newNextIndex := len(rf.log)
+				newNextIndex := rf.log[len(rf.log)-1].Index + 1
 				rf.mu.Unlock()
-				// 发送心跳包
+
+				// 发送RPC不能加锁
 				ok := rf.sendAppendEntries(server, &arg, &reply)
-				// 状态转移
+
 				rf.mu.Lock()
 				defer rf.mu.Unlock()
 				// 丢包了没有关系，过一段时间会再次重发
@@ -509,8 +609,6 @@ func (rf *Raft) heartBeat() {
 					rf.nextIndex[server] = reply.ExpectLogIndex
 					//rf.nextIndex[server]--
 				}
-
-				//根据返回结果判断是否需要同步日志
 			}(i)
 		}
 		//超时时间设置为多少？——要求每秒不要超过10次
@@ -584,7 +682,7 @@ func (rf *Raft) startElection() {
 		rf.serverState = Leader
 		//初始化nextIndex和matchIndex
 		for i := range rf.nextIndex {
-			rf.nextIndex[i] = len(rf.log)
+			rf.nextIndex[i] = rf.log[len(rf.log)-1].Index + 1
 		}
 		for i := range rf.matchIndex {
 			// 怎么会犯这种错误！！！！
@@ -599,6 +697,7 @@ func (rf *Raft) startElection() {
 // 心跳机制，定期触发leader选举,
 func (rf *Raft) ticker() {
 	for !rf.killed() {
+		rf.persist()
 		start := time.Now()
 		interval := rand.Intn(200) + ELECTIONTIMEOUT
 		time.Sleep(time.Duration(interval) * time.Millisecond)
@@ -615,7 +714,6 @@ func (rf *Raft) ticker() {
 		}
 		rf.mu.Unlock()
 		go rf.startElection()
-
 	}
 }
 
