@@ -71,14 +71,14 @@ func (ck *Clerk) Get(key string) string {
 		ck.mu.Lock()
 		leaderId := ck.leader
 		ck.mu.Unlock()
-		DPrintf("send Get PRC call to [%d]", leaderId)
+		//DPrintf("send Get PRC call to [%d]", leaderId)
 		ok := ck.sendGetRPC(leaderId, &arg, &reply)
 		if !ok || reply.Err == ErrWrongLeader {
 			DPrintf("[%d] is not leader", leaderId)
 			ck.mu.Lock()
 			ck.leader = (ck.leader + 1) % len(ck.servers)
 			ck.mu.Unlock()
-			//time.Sleep(50 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 		} else {
 			DPrintf("clerk receive Get reply from kvserver [%d]", leaderId)
 			return reply.Value
@@ -111,14 +111,14 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 		ck.mu.Lock()
 		leaderId := ck.leader
 		ck.mu.Unlock()
-		DPrintf("send PutAppend PRC call to [%d]", leaderId)
+		//DPrintf("send PutAppend PRC call to [%d]", leaderId)
 		ok := ck.sendPutAppendRPC(leaderId, &arg, &reply)
 		if !ok || reply.Err == ErrWrongLeader {
 			DPrintf("[%d] is not leader", leaderId)
 			ck.mu.Lock()
 			ck.leader = (ck.leader + 1) % len(ck.servers)
 			ck.mu.Unlock()
-			//time.Sleep(50 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 		} else {
 			DPrintf("clerk receive PutAppend reply from kvserver [%d]", leaderId)
 			break

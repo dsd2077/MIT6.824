@@ -4,12 +4,15 @@ import (
 	"../labgob"
 	"../labrpc"
 	"../raft"
+	"bytes"
 	"log"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const Debug = 0
+const SNAPSHOTTIME = 1000
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug > 0 {
@@ -38,6 +41,7 @@ type KVServer struct {
 	dead    int32 // set by Kill()
 
 	maxraftstate int // snapshot if log grows this big
+	persister    *raft.Persister
 
 	// Your definitions here.
 	database   map[string]string
@@ -88,7 +92,6 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	*reply = kv.appliedOp[op.Identifier].(GetReply)
 	kv.mu.Unlock()
 	return
-
 }
 
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
@@ -160,7 +163,11 @@ func (kv *KVServer) receiveApplyMsg() {
 	for !kv.killed() {
 		reply := <-kv.applyCh
 		DPrintf("[%d] receive apply message", kv.me)
+		//安装快照
 		if !reply.CommandValid {
+			r := bytes.NewBuffer(reply.Snapshot)
+			d := labgob.NewDecoder(r)
+			d.Decode(&kv.database)
 			continue
 		}
 		op, _ := reply.Command.(Op)
@@ -199,6 +206,21 @@ func (kv *KVServer) receiveApplyMsg() {
 		kv.mu.Unlock()
 
 		kv.cond.Broadcast()
+		// TODO：进行快照期间是否允许操作数据库？
+		// 如果允许的话可能会存在一个问题：如果快照还没有发送完成并在persister中备份成功,kv.persister.RaftStateSize()没有修改就会继续进行快照
+		// 方案一：在执行快照之后睡一会SNAPSHOTTIME(正常情况下快照能否存储到persister中的时间),如果超过这个时间，还没有备份完成，可以认为发生了网络故障，下一次执行op时再次snapshot
+		kv.checkSnapShot(reply.CommandIndex, reply.CommandTerm)
+	}
+}
+
+func (kv *KVServer) checkSnapShot(lastIncludedIndex int, lastIncludedTerm int) {
+	if kv.maxraftstate != -1 && kv.persister.RaftStateSize() >= kv.maxraftstate {
+		w := new(bytes.Buffer)
+		e := labgob.NewEncoder(w)
+		e.Encode(kv.database)
+		snapshot := w.Bytes()
+		go kv.rf.LogCompaction(lastIncludedIndex, lastIncludedTerm, snapshot)
+		time.Sleep(SNAPSHOTTIME * time.Millisecond)
 	}
 }
 
@@ -238,6 +260,7 @@ func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persiste
 	// You may need initialization code here.
 	kv.mu = sync.Mutex{}
 	kv.cond.L = &kv.mu
+	kv.persister = persister
 
 	go kv.receiveApplyMsg()
 

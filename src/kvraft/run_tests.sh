@@ -3,5 +3,5 @@
 for i in {1..100}
 do
     echo "Running iteration $i"
-    go test  -run  3A
+    go test  -run  TestSnapshotRPC3B
 done

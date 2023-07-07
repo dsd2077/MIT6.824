@@ -648,13 +648,14 @@ func TestSnapshotRPC3B(t *testing.T) {
 	check(cfg, t, ck, "a", "A")
 
 	// a bunch of puts into the majority partition.
+	DPrintf("partition : 0 1 | 2")
 	cfg.partition([]int{0, 1}, []int{2})
 	{
 		ck1 := cfg.makeClient([]int{0, 1})
 		for i := 0; i < 50; i++ {
 			Put(cfg, ck1, strconv.Itoa(i), strconv.Itoa(i))
 		}
-		time.Sleep(electionTimeout)
+		time.Sleep(electionTimeout) //这里会睡50S
 		Put(cfg, ck1, "b", "B")
 	}
 
@@ -664,6 +665,7 @@ func TestSnapshotRPC3B(t *testing.T) {
 	if sz > 8*maxraftstate {
 		t.Fatalf("logs were not trimmed (%v > 8*%v)", sz, maxraftstate)
 	}
+	fmt.Println("11111")
 
 	// now make group that requires participation of
 	// lagging server, so that it has to catch up.
