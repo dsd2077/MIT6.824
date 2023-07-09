@@ -180,6 +180,11 @@ func (rf *Raft) LogCompaction(lastIncludedIndex int, lastIncludedTerm int, snaps
 	DPrintf("[%d] begin log compaction, lastIncludedIndex : [%d], lastIncludedTerm : [%d]", rf.me, lastIncludedIndex, lastIncludedTerm)
 
 	firstLogIndex := rf.log[0].Index
+	// 网络延迟导致上一次的RPC在又发生了日志压缩之后到达,就会导致这个情况
+	if lastIncludedIndex-firstLogIndex < 0 {
+		rf.mu.Unlock()
+		return
+	}
 	newArr := make([]Entry, len(rf.log)-lastIncludedIndex+firstLogIndex)
 	DPrintf("len(rf.log)-lastIncludedIndex+firstLogIndex = [%d]", len(rf.log)-lastIncludedIndex+firstLogIndex)
 	DPrintf("lastIncludedIndex-firstLogIndex = [%d]", lastIncludedIndex-firstLogIndex)
@@ -406,7 +411,6 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	defer rf.mu.Unlock()
 	//DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, command)
 
-	DPrintf("[%d] begin agreement on  cmd ", rf.me)
 	term := rf.currentTerm
 	index := rf.log[len(rf.log)-1].Index + 1
 	entry := Entry{
@@ -415,11 +419,15 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		Cmd:   command,
 	}
 	rf.log = append(rf.log, entry)
+	DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, index)
 	// 立刻发起复制
 	go func() {
-		rf.sendAppendEntries()
-		rf.persist()
-		go rf.apply()
+		//start := time.Now()
+		rf.sendAppendEntries() //它的执行是很快的
+		time.Sleep(1 * time.Millisecond)
+		//rf.apply()
+		//elapsed := time.Since(start) // 计算代码执行时间
+		//fmt.Printf("an agreement cost [%s]", elapsed)
 	}()
 
 	return index, term, true
@@ -436,6 +444,7 @@ func (rf *Raft) sendAppendEntries() {
 			continue
 		}
 		go func(server int) {
+			//start := time.Now()
 			reply := AppendEntriesReply{}
 			rf.mu.Lock()
 			if rf.serverState != Leader {
@@ -490,6 +499,8 @@ func (rf *Raft) sendAppendEntries() {
 				rf.nextIndex[server] = reply.ExpectLogIndex
 				//rf.nextIndex[server]--
 			}
+			//elasped := time.Since(start)
+			//fmt.Printf("a round of append rpc cost [%s]", elasped)
 		}(i)
 	}
 }
@@ -532,19 +543,16 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if len(args.Entries) != 0 {
 		cmdtype = "appendEntry"
 	}
-	//DPrintf(
-	//	"[%d] receive %s rpc from [%d] Term:[%d] PrevlogIndex: [%d] PrevLogTerm: [%d] LeaderCommit: [%d]",
-	//	rf.me,
-	//	cmdtype,
-	//	args.LeaderId,
-	//	args.Term,
-	//	args.PrevLogIndex,
-	//	args.PrevLogTerm,
-	//	args.LeaderCommit,
-	//)
-	//if len(args.Entries) != 0 {
-	//DPrintf("log entry index from [%d] to [%d]", args.Entries[0].Index, args.Entries[len(args.Entries)-1].Index)
-	//}
+	firstLogIndex := rf.log[0].Index
+	DPrintf(
+		"[%d] receive %s rpc from [%d] prevLogIndex : [%d], firstLogIndex : [%d], len(rf.log) : [%d]",
+		rf.me,
+		cmdtype,
+		args.LeaderId,
+		args.PrevLogIndex,
+		firstLogIndex,
+		len(rf.log),
+	)
 	if args.Term < rf.currentTerm {
 		DPrintf("[%d] receive %s rpc from [%d] refuse case1", rf.me, cmdtype, args.LeaderId)
 		reply.Success = false
@@ -558,10 +566,18 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.ExpectLogIndex = rf.log[len(rf.log)-1].Index + 1 //应对大量缺失
 		return
 	}
-	//不存在rf.log[0].Index > args.PrevLogIndex 的情况？那意味着follower的状态机比leader还新
-	firstLogIndex := rf.log[0].Index
-	if len(rf.log) > args.PrevLogIndex-firstLogIndex && rf.log[args.PrevLogIndex-firstLogIndex].Term != args.PrevLogTerm {
+	//理论上来说不存在rf.log[0].Index > args.PrevLogIndex 的情况？那意味着follower的状态机比leader还新
+	//但是，如果发生网络延迟、丢包等情况，就会发生
+	if firstLogIndex > args.PrevLogIndex {
 		DPrintf("[%d] receive %s rpc from [%d] refuse case3", rf.me, cmdtype, args.LeaderId)
+		reply.Success = false
+		reply.ExpectLogIndex = rf.log[len(rf.log)-1].Index + 1 //应对大量缺失
+		return
+
+	}
+
+	if len(rf.log) > args.PrevLogIndex-firstLogIndex && rf.log[args.PrevLogIndex-firstLogIndex].Term != args.PrevLogTerm {
+		DPrintf("[%d] receive %s rpc from [%d] refuse case4", rf.me, cmdtype, args.LeaderId)
 		DPrintf("rf.log[args.PrevLogIndex-firstLogIndex].Term : [%d] args.PrevLogTerm : [%d]", rf.log[args.PrevLogIndex-firstLogIndex].Term, args.PrevLogTerm)
 		// 已经应用到状态机的日志是绝对不会冲突的
 		reply.ExpectLogIndex = rf.lastApplied + 1 //应对大量冲突
@@ -610,19 +626,20 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 func (rf *Raft) printEntry() {
 	// 打印结果
 	if Debug > 0 {
+		rf.mu.Lock()
 		DPrintf("log content of [%d] :", rf.me)
-		for idx, entry := range rf.log {
+		for _, entry := range rf.log {
 			fmt.Println(entry.Index, "   ", entry.Term, "   ", entry.Cmd)
-			if idx == rf.lastApplied {
+			if entry.Index == rf.lastApplied {
 				fmt.Println("committed")
 			}
 		}
+		rf.mu.Unlock()
 	}
 }
 
 func (rf *Raft) commit(leaderCommit int) {
 	rf.mu.Lock()
-	defer rf.mu.Unlock()
 	firstLogIndex := rf.log[0].Index
 	for rf.commitIndex < leaderCommit && rf.commitIndex < rf.log[len(rf.log)-1].Index {
 		rf.commitIndex++
@@ -635,8 +652,10 @@ func (rf *Raft) commit(leaderCommit int) {
 		}
 		rf.applyCh <- msg
 	}
+	rf.mu.Unlock()
 	//DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
 	//rf.printEntry()
+	rf.persist()
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
@@ -669,6 +688,7 @@ func (rf *Raft) updateCommitIndex() {
 	N := copyMatchIndex[len(copyMatchIndex)/2] //能通过半数投票的最大值
 	if N > rf.commitIndex && rf.log[N-firstLogIndex].Term == rf.currentTerm {
 		rf.commitIndex = N
+		go rf.apply()
 	}
 }
 
@@ -676,7 +696,6 @@ func (rf *Raft) updateCommitIndex() {
 // 这是一个阻塞函数，必须放在一个单独的协程中
 func (rf *Raft) apply() {
 	rf.mu.Lock()
-	defer rf.mu.Unlock()
 	// 查看已复制到大部分机器上的最大日志号
 
 	firstLogIndex := rf.log[0].Index
@@ -695,12 +714,13 @@ func (rf *Raft) apply() {
 			//rf.printEntry()
 		}
 	}
+	rf.mu.Unlock()
+	rf.persist()
 }
 func (rf *Raft) heartBeat() {
 	for !rf.killed() && rf.isLeader() {
 		rf.sendAppendEntries()
 		rf.persist()
-		go rf.apply()
 		//超时时间设置为多少？——要求每秒不要超过10次
 		time.Sleep(time.Duration(HEARTTIMEOUT) * time.Millisecond)
 	}

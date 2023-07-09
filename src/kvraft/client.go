@@ -59,6 +59,7 @@ func (ck *Clerk) sendGetRPC(leaderId int, args *GetArgs, reply *GetReply) bool {
 
 func (ck *Clerk) Get(key string) string {
 
+	//start := time.Now()
 	// You will have to modify this function.
 	args := GetArgs{
 		Key:        key,
@@ -81,6 +82,8 @@ func (ck *Clerk) Get(key string) string {
 			//time.Sleep(50 * time.Millisecond)
 		} else {
 			DPrintf("clerk receive Get reply from kvserver [%d]", leaderId)
+			//elapsed := time.Since(start) // 计算代码执行时间
+			//fmt.Printf("Get op cost [%s]", elapsed)
 			return reply.Value
 		}
 	}
@@ -140,6 +143,7 @@ func (ck *Clerk) sendPutAppendRPC(leaderId int, args *PutAppendArgs, reply *PutA
 	}
 }
 
+// 这个操作是不是并发的？
 func (ck *Clerk) Put(key string, value string) {
 	ck.PutAppend(key, value, "Put")
 }

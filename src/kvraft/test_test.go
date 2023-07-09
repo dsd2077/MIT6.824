@@ -709,11 +709,12 @@ func TestSnapshotSize3B(t *testing.T) {
 		check(cfg, t, ck, "x", "0")
 		Put(cfg, ck, "x", "1")
 		check(cfg, t, ck, "x", "1")
-		fmt.Printf("[%d] pass\n", i)
+		//fmt.Printf("[%d] pass\n", i)
 	}
 
 	// check that servers have thrown away most of their log entries
 	sz := cfg.LogSize()
+	// 这里为什么要乘以8？
 	if sz > 8*maxraftstate {
 		t.Fatalf("logs were not trimmed (%v > 8*%v)", sz, maxraftstate)
 	}

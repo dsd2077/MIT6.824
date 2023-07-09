@@ -8,7 +8,6 @@ import (
 	"log"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 const Debug = 0
@@ -220,7 +219,7 @@ func (kv *KVServer) checkSnapShot(lastIncludedIndex int, lastIncludedTerm int) {
 		e.Encode(kv.database)
 		snapshot := w.Bytes()
 		go kv.rf.LogCompaction(lastIncludedIndex, lastIncludedTerm, snapshot)
-		time.Sleep(SNAPSHOTTIME * time.Millisecond)
+		//time.Sleep(SNAPSHOTTIME * time.Millisecond)
 	}
 }
 
