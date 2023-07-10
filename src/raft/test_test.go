@@ -206,6 +206,9 @@ func TestFailNoAgree2B(t *testing.T) {
 	cfg.disconnect((leader + 1) % servers)
 	cfg.disconnect((leader + 2) % servers)
 	cfg.disconnect((leader + 3) % servers)
+	DPrintf("disconnect [%d]", (leader+1)%servers)
+	DPrintf("disconnect [%d]", (leader+2)%servers)
+	DPrintf("disconnect [%d]", (leader+3)%servers)
 
 	index, _, ok := cfg.rafts[leader].Start(20)
 	if ok != true {
@@ -226,6 +229,9 @@ func TestFailNoAgree2B(t *testing.T) {
 	cfg.connect((leader + 1) % servers)
 	cfg.connect((leader + 2) % servers)
 	cfg.connect((leader + 3) % servers)
+	DPrintf("connect [%d]", (leader+1)%servers)
+	DPrintf("connect [%d]", (leader+2)%servers)
+	DPrintf("connect [%d]", (leader+3)%servers)
 
 	// the disconnected majority may have chosen a leader from
 	// among their own ranks, forgetting index 2.

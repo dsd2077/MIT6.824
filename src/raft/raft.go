@@ -113,28 +113,25 @@ func (rf *Raft) GetState() (int, bool) {
 // save Raft's persistent state to stable storage,
 // where it can later be retrieved after a crash and restart.
 // see paper's Figure 2 for a description of what should be persistent.
+// 易错点：状态发生改变之后要立刻持久化,否则Raft宕机之后再读取persist，可能会导致宕机恢复前后不一致，从而导致强一致性失效
 func (rf *Raft) persist() {
 	// Your code here (2C).
 	// Example:
-	rf.mu.Lock()
 	w := new(bytes.Buffer)
 	e := labgob.NewEncoder(w)
 	e.Encode(rf.currentTerm)
 	e.Encode(rf.votedFor)
 	e.Encode(rf.log)
-	rf.mu.Unlock()
 	data := w.Bytes()
 	rf.persister.SaveRaftState(data)
 }
 
 func (rf *Raft) persistSnapshot(snapshot []byte) {
-	rf.mu.Lock()
 	w := new(bytes.Buffer)
 	e := labgob.NewEncoder(w)
 	e.Encode(rf.currentTerm)
 	e.Encode(rf.votedFor)
 	e.Encode(rf.log)
-	rf.mu.Unlock()
 	state := w.Bytes()
 	rf.persister.SaveStateAndSnapshot(state, snapshot)
 }
@@ -151,6 +148,7 @@ func (rf *Raft) readPersist(data []byte) bool {
 	var currentTerm int
 	var votedFor int
 	var log []Entry
+
 	if err := d.Decode(&currentTerm); err != nil {
 		DPrintf("ClientEnd.Call(): decode reply: %v\n", err)
 		return false
@@ -166,34 +164,36 @@ func (rf *Raft) readPersist(data []byte) bool {
 	rf.currentTerm = currentTerm
 	rf.votedFor = votedFor
 	rf.log = log
+	DPrintf("[%d] read persist")
+	rf.printEntry()
+
+	//下面两个信息由于没有持久化，是否需要将下面两个信息也持久化？
+	rf.lastApplied = rf.log[0].Index
+	rf.commitIndex = rf.log[0].Index
 	return true
 }
 
+// TODO:日志压缩的过程中是否要暂停其他操作？
 func (rf *Raft) LogCompaction(lastIncludedIndex int, lastIncludedTerm int, snapshot []byte) {
 	// discard the stale log
 	start := time.Now()
 	rf.mu.Lock()
-	// 创建一个新的切片,才能真正的释放掉原来的数组
-	// 保留lastIncludedIndex这个元素，这样可以保证log中至少有一个元素
-	// 剩余元素个数：len(rf.log)-lastIncludedIndex+firstLogIndex
-	// 细节是魔鬼
+	defer rf.mu.Unlock()
 	DPrintf("[%d] begin log compaction, lastIncludedIndex : [%d], lastIncludedTerm : [%d]", rf.me, lastIncludedIndex, lastIncludedTerm)
 
 	firstLogIndex := rf.log[0].Index
 	// 网络延迟导致上一次的RPC在又发生了日志压缩之后到达,就会导致这个情况
 	if lastIncludedIndex-firstLogIndex < 0 {
-		rf.mu.Unlock()
 		return
 	}
-	newArr := make([]Entry, len(rf.log)-lastIncludedIndex+firstLogIndex)
-	DPrintf("len(rf.log)-lastIncludedIndex+firstLogIndex = [%d]", len(rf.log)-lastIncludedIndex+firstLogIndex)
-	DPrintf("lastIncludedIndex-firstLogIndex = [%d]", lastIncludedIndex-firstLogIndex)
-	copy(newArr, rf.log[lastIncludedIndex-firstLogIndex:])
-	//原始的数组没有人引用之后，就会被垃圾回收
-	rf.log = newArr
+
+	if len(rf.log)-lastIncludedIndex+firstLogIndex <= 0 {
+		return
+	}
+	rf.releaseOldLogMemory(firstLogIndex, lastIncludedIndex)
+
 	rf.lastIncludedIndex = lastIncludedIndex
 	rf.lastIncludedTerm = lastIncludedTerm
-	rf.mu.Unlock()
 	rf.persistSnapshot(snapshot)
 	elapsed := time.Since(start) // 计算代码执行时间
 	DPrintf("[%d] finish log compaction! cost time [%s]: ", rf.me, elapsed)
@@ -216,42 +216,58 @@ type InstallSnapShotReply struct {
 }
 
 // TODO:是否要保证安装快照的期间不能执行其他操作
+// 只要保证安装快照期间不会执行其他操作，就不会重复的发送InstallSnapShot
 func (rf *Raft) InstallSnapShot(args *InstallSnapShotArgs, reply *InstallSnapShotReply) {
 	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	reply.Term = rf.currentTerm
 	if args.Term < rf.currentTerm {
 		DPrintf("[%d] receive snapshot from [%d] refuse case1", rf.me, args.LeaderId)
 		reply.Success = false
-		rf.mu.Unlock()
+		return
+	}
+	rf.lastReceive = time.Now()
+	firstLogIndex := rf.log[0].Index
+	lastLogIndex := rf.log[len(rf.log)-1].Index
+	// 在网络延迟的情况下先发送的InstallSnapShot RPC后抵达
+	if firstLogIndex >= args.LastIncludedIndex {
+		DPrintf("[%d] receive snapshot from [%d] refuse case2", rf.me, args.LeaderId)
+		reply.Success = false
+		return
+	}
+	if rf.lastApplied >= rf.lastIncludedIndex {
+		reply.Success = true
 		return
 	}
 	DPrintf("[%d] receive snapshot from [%d] accept", rf.me, args.LeaderId)
-	rf.lastReceive = time.Now()
-	firstLogIndex := rf.log[0].Index
-	// 一致性检查
-	// 有一种可能：leader给follow发送了快照，follower收到了，并且成功应用到状态机，但回复RPC丢包了，
-	// 不存在firstLogIndex > args.LastIncludedIndex的情况，因为这意味着follower的状态比leader还新
-	if len(rf.log) > args.LastIncludedIndex-firstLogIndex && rf.log[args.LastIncludedIndex-firstLogIndex].Term == args.LastIncludedTerm {
-		reply.Success = true
-		rf.mu.Unlock()
-		return
-	}
-	rf.mu.Unlock()
 
 	// 保存snapshot
 	rf.persistSnapshot(args.Data)
 
-	rf.mu.Lock()
-	//扔掉过期的日志,保留最后一条,防止访问越界
-	newArr := []Entry{{
-		Index: args.LastIncludedIndex,
-		Term:  args.LastIncludedTerm,
-		Cmd:   nil,
-	}}
-	rf.log = newArr
-	rf.commitIndex = args.LastIncludedIndex
+	// follower缺失日志
+	if lastLogIndex < args.LastIncludedIndex {
+		newArr := []Entry{{
+			Index: args.LastIncludedIndex,
+			Term:  args.LastIncludedTerm,
+			Cmd:   nil,
+		}}
+		rf.log = newArr
+	} else {
+		// 前缀匹配
+		if rf.log[args.LastIncludedIndex-firstLogIndex].Term == args.LastIncludedTerm {
+			rf.releaseOldLogMemory(firstLogIndex, args.LastIncludedIndex)
+		} else {
+			// 日志冲突
+			newArr := []Entry{{
+				Index: args.LastIncludedIndex,
+				Term:  args.LastIncludedTerm,
+				Cmd:   nil,
+			}}
+			rf.log = newArr
+		}
+	}
 	rf.lastApplied = args.LastIncludedIndex
-	rf.mu.Unlock()
+	rf.commitIndex = args.LastIncludedIndex
 
 	//发送snapshot给kvserver，使用snapshot重置状态机
 	go func() {
@@ -266,7 +282,20 @@ func (rf *Raft) InstallSnapShot(args *InstallSnapShotArgs, reply *InstallSnapSho
 
 	reply.Success = true
 	DPrintf("[%d] finish install snapshot from [%d]", rf.me, args.LeaderId)
-	//rf.printEntry()
+	rf.printEntry()
+}
+
+func (rf *Raft) releaseOldLogMemory(firstLogIndex int, lastIncludedIndex int) {
+	// 创建一个新的切片,才能真正的释放掉原来的数组
+	// 保留lastIncludedIndex这个元素，这样可以保证log中至少有一个元素
+	// 剩余元素个数：len(rf.log)-lastIncludedIndex+firstLogIndex
+	// 细节是魔鬼
+	newArr := make([]Entry, len(rf.log)-lastIncludedIndex+firstLogIndex)
+	DPrintf("len(rf.log)-lastIncludedIndex+firstLogIndex = [%d]", len(rf.log)-lastIncludedIndex+firstLogIndex)
+	DPrintf("lastIncludedIndex-firstLogIndex = [%d]", lastIncludedIndex-firstLogIndex)
+	copy(newArr, rf.log[lastIncludedIndex-firstLogIndex:])
+	//原始的数组没有人引用之后，就会被垃圾回收
+	rf.log = newArr
 }
 
 func (rf *Raft) sendInstallSnapShotRPC(server int, currentTerm int) {
@@ -302,7 +331,6 @@ func (rf *Raft) sendInstallSnapShotRPC(server int, currentTerm int) {
 		DPrintf("[%d] send snapshot success rf.nextIndex[server] : [%d] rf.matchIndex[server] : [%d]", rf.me, rf.nextIndex[server], rf.matchIndex[server])
 		rf.updateCommitIndex()
 	}
-	// TODO:是否有可能失败？
 }
 
 // example RequestVote RPC arguments structure.
@@ -408,7 +436,6 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	}
 	//fmt.Printf("[%d] receive cmd [%s]\n", rf.me, command)
 	rf.mu.Lock() //这里需要加锁，如果别的地方把锁给占了，就拿不到锁
-	defer rf.mu.Unlock()
 	//DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, command)
 
 	term := rf.currentTerm
@@ -419,12 +446,15 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		Cmd:   command,
 	}
 	rf.log = append(rf.log, entry)
+	rf.persist() //立即持久化
+	rf.mu.Unlock()
 	DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, index)
 	// 立刻发起复制
 	go func() {
 		//start := time.Now()
+		// TODO:要不要重置心跳定时器？——如果不重置
 		rf.sendAppendEntries() //它的执行是很快的
-		time.Sleep(1 * time.Millisecond)
+		//time.Sleep(1 * time.Millisecond)
 		//rf.apply()
 		//elapsed := time.Since(start) // 计算代码执行时间
 		//fmt.Printf("an agreement cost [%s]", elapsed)
@@ -435,9 +465,9 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 func (rf *Raft) sendAppendEntries() {
 	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	//极端情况：在heartBeat发送的过程中在AppendEntries中发生了状态转移,导致发往各个server中的数据不一致
 	currentTerm := rf.currentTerm
-	rf.mu.Unlock()
 
 	for i := 0; i < len(rf.peers); i++ {
 		if i == rf.me {
@@ -532,6 +562,7 @@ func (rf *Raft) changeState(newTerm int, state State) {
 		rf.serverState = state
 		rf.votedFor = -1
 	}
+	rf.persist()
 }
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
@@ -544,15 +575,16 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		cmdtype = "appendEntry"
 	}
 	firstLogIndex := rf.log[0].Index
-	DPrintf(
-		"[%d] receive %s rpc from [%d] prevLogIndex : [%d], firstLogIndex : [%d], len(rf.log) : [%d]",
-		rf.me,
-		cmdtype,
-		args.LeaderId,
-		args.PrevLogIndex,
-		firstLogIndex,
-		len(rf.log),
-	)
+	//DPrintf(
+	//	"[%d] receive %s rpc from [%d] prevLogIndex : [%d], firstLogIndex : [%d], len(rf.log) : [%d], len(args.Entries) : [%d]",
+	//	rf.me,
+	//	cmdtype,
+	//	args.LeaderId,
+	//	args.PrevLogIndex,
+	//	firstLogIndex,
+	//	len(rf.log),
+	//	len(args.Entries),
+	//)
 	if args.Term < rf.currentTerm {
 		DPrintf("[%d] receive %s rpc from [%d] refuse case1", rf.me, cmdtype, args.LeaderId)
 		reply.Success = false
@@ -581,14 +613,10 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		DPrintf("rf.log[args.PrevLogIndex-firstLogIndex].Term : [%d] args.PrevLogTerm : [%d]", rf.log[args.PrevLogIndex-firstLogIndex].Term, args.PrevLogTerm)
 		// 已经应用到状态机的日志是绝对不会冲突的
 		reply.ExpectLogIndex = rf.lastApplied + 1 //应对大量冲突
-
 		//If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it
 		// 截掉rf.lastApplied之后所有的元素
-		//firstLogIndex := rf.log[0].Index
-		//newArr := make([]Entry, rf.lastApplied-firstLogIndex+1)
-		//copy(newArr, rf.log[:rf.lastApplied-firstLogIndex+1])
-		////原始的数组没有人引用之后，就会被垃圾回收
-		//rf.log = newArr
+		firstLogIndex := rf.log[0].Index
+		rf.releaseOldLogMemory(firstLogIndex, rf.lastApplied)
 		reply.Success = false
 		return
 	}
@@ -613,28 +641,28 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if len(args.Entries) > rf.log[len(rf.log)-1].Index-args.PrevLogIndex {
 		rf.log = append(rf.log, args.Entries[rf.log[len(rf.log)-1].Index-args.PrevLogIndex:]...)
 	}
+	rf.persist()
 
 	// 提交日志
 	if args.LeaderCommit > rf.commitIndex {
 		DPrintf("follower [%d] begin to commit", rf.me)
 		go rf.commit(args.LeaderCommit)
 	}
-
 	reply.Success = true
 }
 
 func (rf *Raft) printEntry() {
 	// 打印结果
 	if Debug > 0 {
-		rf.mu.Lock()
+		//for _, entry := range rf.log {
+		//	fmt.Println(entry.Index, "   ", entry.Term, "   ", entry.Cmd)
+		//	if entry.Index == rf.lastApplied {
+		//		fmt.Println("committed")
+		//	}
+		//}
 		DPrintf("log content of [%d] :", rf.me)
-		for _, entry := range rf.log {
-			fmt.Println(entry.Index, "   ", entry.Term, "   ", entry.Cmd)
-			if entry.Index == rf.lastApplied {
-				fmt.Println("committed")
-			}
-		}
-		rf.mu.Unlock()
+		fmt.Println(rf.log[0].Index, "   ", rf.log[0].Term, "   ", rf.log[0].Cmd)
+		fmt.Println(rf.log[len(rf.log)-1].Index, "   ", rf.log[len(rf.log)-1].Term, "   ", rf.log[len(rf.log)-1].Cmd)
 	}
 }
 
@@ -650,12 +678,13 @@ func (rf *Raft) commit(leaderCommit int) {
 			CommandIndex: rf.log[rf.commitIndex-firstLogIndex].Index,
 			CommandTerm:  rf.log[rf.commitIndex-firstLogIndex].Term,
 		}
-		rf.applyCh <- msg
+		rf.applyCh <- msg //这里被阻塞了，
+		DPrintf("[%d] apply [%d]", rf.me, msg.CommandIndex)
 	}
+
 	rf.mu.Unlock()
 	//DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
-	//rf.printEntry()
-	rf.persist()
+	rf.printEntry()
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
@@ -670,6 +699,8 @@ func (rf *Raft) commit(leaderCommit int) {
 func (rf *Raft) Kill() {
 	atomic.StoreInt32(&rf.dead, 1)
 	// Your code here, if desired.
+	DPrintf("[%d] is kelled", rf.me)
+	rf.printEntry()
 }
 
 func (rf *Raft) killed() bool {
@@ -709,18 +740,17 @@ func (rf *Raft) apply() {
 			CommandTerm:  rf.log[rf.lastApplied-firstLogIndex].Term,
 		}
 		rf.applyCh <- msg
+		DPrintf("[%d] apply [%d]", rf.me, msg.CommandIndex)
 		if rf.lastApplied == rf.commitIndex {
-			//DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
-			//rf.printEntry()
+			DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
+			rf.printEntry()
 		}
 	}
 	rf.mu.Unlock()
-	rf.persist()
 }
 func (rf *Raft) heartBeat() {
 	for !rf.killed() && rf.isLeader() {
 		rf.sendAppendEntries()
-		rf.persist()
 		//超时时间设置为多少？——要求每秒不要超过10次
 		time.Sleep(time.Duration(HEARTTIMEOUT) * time.Millisecond)
 	}
@@ -745,6 +775,7 @@ func (rf *Raft) startElection() {
 		LastLogTerm:  rf.log[len(rf.log)-1].Term,
 	}
 	currentTerm := rf.currentTerm
+	rf.persist()
 	rf.mu.Unlock()
 	DPrintf("[%d] begin election at term [%d]", rf.me, rf.currentTerm)
 
@@ -807,7 +838,6 @@ func (rf *Raft) startElection() {
 // 心跳机制，定期触发leader选举,
 func (rf *Raft) ticker() {
 	for !rf.killed() {
-		rf.persist()
 		start := time.Now()
 		interval := rand.Intn(200) + ELECTIONTIMEOUT
 		time.Sleep(time.Duration(interval) * time.Millisecond)
@@ -858,7 +888,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 		}},
 		commitIndex: 0,
 		lastApplied: 0,
-		nextIndex:   make([]int, len(peers)), //log中放了一条空日志，所以nextIndex从1开始
+		nextIndex:   make([]int, len(peers)),
 		matchIndex:  make([]int, len(peers)),
 		lastReceive: time.Now(),
 	}

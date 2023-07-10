@@ -665,7 +665,6 @@ func TestSnapshotRPC3B(t *testing.T) {
 	if sz > 8*maxraftstate {
 		t.Fatalf("logs were not trimmed (%v > 8*%v)", sz, maxraftstate)
 	}
-	fmt.Println("11111")
 
 	// now make group that requires participation of
 	// lagging server, so that it has to catch up.
@@ -733,6 +732,7 @@ func TestSnapshotRecover3B(t *testing.T) {
 	GenericTest(t, "3B", 1, false, true, false, 1000)
 }
 
+// 单独这一个通不过
 func TestSnapshotRecoverManyClients3B(t *testing.T) {
 	// Test: restarts, snapshots, many clients (3B) ...
 	GenericTest(t, "3B", 20, false, true, false, 1000)

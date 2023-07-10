@@ -2,7 +2,6 @@ package kvraft
 
 import (
 	"../labrpc"
-	"sync"
 	"time"
 )
 import "crypto/rand"
@@ -15,7 +14,9 @@ type Clerk struct {
 	servers []*labrpc.ClientEnd
 	// You will have to modify this struct.
 	leader int
-	mu     sync.Mutex
+	//mu               sync.Mutex
+	clientIdentifier int64
+	opIdentifier     int
 }
 
 func nrand() int64 {
@@ -30,6 +31,8 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	ck.servers = servers
 	// You'll have to add code here.
 	ck.leader = 0
+	ck.clientIdentifier = nrand()
+	ck.opIdentifier = 0
 	return ck
 }
 
@@ -62,33 +65,28 @@ func (ck *Clerk) Get(key string) string {
 	//start := time.Now()
 	// You will have to modify this function.
 	args := GetArgs{
-		Key:        key,
-		Identifier: nrand(),
+		Key:              key,
+		ClientIdentifier: ck.clientIdentifier,
+		OPIdentifier:     ck.opIdentifier,
 	}
 
 	for {
 		reply := GetReply{}
 		arg := args
-		ck.mu.Lock()
-		leaderId := ck.leader
-		ck.mu.Unlock()
 		//DPrintf("send Get PRC call to [%d]", leaderId)
-		ok := ck.sendGetRPC(leaderId, &arg, &reply)
+		ok := ck.sendGetRPC(ck.leader, &arg, &reply)
 		if !ok || reply.Err == ErrWrongLeader {
-			DPrintf("[%d] is not leader", leaderId)
-			ck.mu.Lock()
+			//DPrintf("[%d] is not leader", leaderId)
 			ck.leader = (ck.leader + 1) % len(ck.servers)
-			ck.mu.Unlock()
-			//time.Sleep(50 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 		} else {
-			DPrintf("clerk receive Get reply from kvserver [%d]", leaderId)
+			//DPrintf("clerk receive Get reply from kvserver [%d]", leaderId)
 			//elapsed := time.Since(start) // 计算代码执行时间
 			//fmt.Printf("Get op cost [%s]", elapsed)
+			ck.opIdentifier++
 			return reply.Value
 		}
 	}
-
-	return ""
 }
 
 // shared by Put and Append.
@@ -102,28 +100,25 @@ func (ck *Clerk) Get(key string) string {
 func (ck *Clerk) PutAppend(key string, value string, op string) {
 	// You will have to modify this function.
 	args := PutAppendArgs{
-		Key:        key,
-		Value:      value,
-		Op:         op,
-		Identifier: nrand(),
+		Key:              key,
+		Value:            value,
+		Op:               op,
+		ClientIdentifier: ck.clientIdentifier,
+		OPIdentifier:     ck.opIdentifier,
 	}
 	// 就算发给正确的leader，也有可能出现丢包、延迟、宕机等情况
 	for {
 		reply := PutAppendReply{}
 		arg := args
-		ck.mu.Lock()
-		leaderId := ck.leader
-		ck.mu.Unlock()
 		//DPrintf("send PutAppend PRC call to [%d]", leaderId)
-		ok := ck.sendPutAppendRPC(leaderId, &arg, &reply)
+		ok := ck.sendPutAppendRPC(ck.leader, &arg, &reply)
 		if !ok || reply.Err == ErrWrongLeader {
-			DPrintf("[%d] is not leader", leaderId)
-			ck.mu.Lock()
+			//DPrintf("[%d] is not leader", leaderId)
 			ck.leader = (ck.leader + 1) % len(ck.servers)
-			ck.mu.Unlock()
-			//time.Sleep(50 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 		} else {
-			DPrintf("clerk receive PutAppend reply from kvserver [%d]", leaderId)
+			ck.opIdentifier++
+			//DPrintf("clerk receive PutAppend reply from kvserver [%d]", leaderId)
 			break
 		}
 	}
@@ -143,7 +138,6 @@ func (ck *Clerk) sendPutAppendRPC(leaderId int, args *PutAppendArgs, reply *PutA
 	}
 }
 
-// 这个操作是不是并发的？
 func (ck *Clerk) Put(key string, value string) {
 	ck.PutAppend(key, value, "Put")
 }
