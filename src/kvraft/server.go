@@ -46,7 +46,7 @@ type KVServer struct {
 	// Your definitions here.
 	database   map[string]string
 	leader     bool                  //与之交互的Raft是不是server
-	appliedOp  map[int64]interface{} //用于记录已经执行过的请求，并将结果保存,防止一个请求执行两次,
+	appliedOp  map[int64]interface{} //用于记录已经执行过的请求，并将结果保存,防止一个请求执行两次,		//这个无法序列化
 	leaderTerm int                   //leader的任期号
 }
 

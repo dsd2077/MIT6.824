@@ -655,9 +655,10 @@ func TestSnapshotRPC3B(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			Put(cfg, ck1, strconv.Itoa(i), strconv.Itoa(i))
 		}
-		time.Sleep(electionTimeout) //这里会睡50S
+		time.Sleep(electionTimeout)
 		Put(cfg, ck1, "b", "B")
 	}
+	DPrintf("1111")
 
 	// check that the majority partition has thrown away
 	// most of its log entries.
@@ -678,6 +679,7 @@ func TestSnapshotRPC3B(t *testing.T) {
 		check(cfg, t, ck1, "1", "1")
 		check(cfg, t, ck1, "49", "49")
 	}
+	DPrintf("2222")
 
 	// now everybody
 	cfg.partition([]int{0, 1, 2}, []int{})
