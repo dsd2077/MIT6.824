@@ -363,15 +363,16 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		reply.VoteGranted = false
 		return
 	}
+	// 这一步判断必须放在下一步判断（日志检查）前面！！！否则会出问题
+	if args.Term > rf.currentTerm {
+		rf.changeState(args.Term, Follower)
+	}
 	if !rf.isLogUp2Date(args.LastLogTerm, args.LastLogIndex) {
 		DPrintf("[%d] receive request vote rpc from [%d] refuse case2", rf.me, args.CandidateId)
 		reply.Term, reply.VoteGranted = rf.currentTerm, false
 		return
 	}
 	rf.lastReceive = time.Now()
-	if args.Term > rf.currentTerm {
-		rf.changeState(args.Term, Follower)
-	}
 
 	rf.votedFor = args.CandidateId
 	reply.Term, reply.VoteGranted = rf.currentTerm, true
@@ -591,6 +592,11 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = false
 		return
 	}
+	//If the leader's term is **at least as** large as the candidate's current term , then the cadidata recongnizes the leader
+	// as legitimate and returns to follower state
+	if args.Term >= rf.currentTerm {
+		rf.changeState(args.Term, Follower)
+	}
 	rf.lastReceive = time.Now()
 	// case2 : 一致性检查 :日志缺失
 	if rf.log[len(rf.log)-1].Index < args.PrevLogIndex {
@@ -621,12 +627,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 	DPrintf("[%d] receive %s rpc from [%d] accept", rf.me, cmdtype, args.LeaderId)
-
-	//If the leader's term is **at least as** large as the candidate's current term , then the cadidata recongnizes the leader
-	// as legitimate and returns to follower state
-	if args.Term >= rf.currentTerm {
-		rf.changeState(args.Term, Follower)
-	}
 
 	// TODO:为什么下面的代码会报DATA RACE
 	//for idx := range args.Entries {
