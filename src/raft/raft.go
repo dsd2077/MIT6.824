@@ -285,6 +285,7 @@ func (rf *Raft) InstallSnapShot(args *InstallSnapShotArgs, reply *InstallSnapSho
 	rf.printEntry()
 }
 
+// 保留lastIncludedIndex之后的全部日志
 func (rf *Raft) releaseOldLogMemory(firstLogIndex int, lastIncludedIndex int) {
 	// 创建一个新的切片,才能真正的释放掉原来的数组
 	// 保留lastIncludedIndex这个元素，这样可以保证log中至少有一个元素
@@ -380,7 +381,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 }
 func (rf *Raft) isLogUp2Date(lastLogTerm int, lastLogIndex int) bool {
 	// 保证candidate拥有follower已提交的全部日志
-	// TODO:为什么？
 	if lastLogTerm > rf.log[len(rf.log)-1].Term {
 		return true
 	}
@@ -454,7 +454,6 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	// 立刻发起复制
 	go func() {
 		//start := time.Now()
-		// TODO:要不要重置心跳定时器？——如果不重置
 		rf.sendAppendEntries() //它的执行是很快的
 		//time.Sleep(1 * time.Millisecond)
 		//rf.apply()
@@ -613,7 +612,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.ExpectLogIndex = rf.log[len(rf.log)-1].Index + 1 //应对大量缺失
 		return
 	}
-
+	// 日志一致性检查
 	if len(rf.log) > args.PrevLogIndex-firstLogIndex && rf.log[args.PrevLogIndex-firstLogIndex].Term != args.PrevLogTerm {
 		DPrintf("[%d] receive %s rpc from [%d] refuse case4", rf.me, cmdtype, args.LeaderId)
 		DPrintf("rf.log[args.PrevLogIndex-firstLogIndex].Term : [%d] args.PrevLogTerm : [%d]", rf.log[args.PrevLogIndex-firstLogIndex].Term, args.PrevLogTerm)
@@ -622,23 +621,19 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		//If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it
 		// 截掉rf.lastApplied之后所有的元素
 		firstLogIndex := rf.log[0].Index
-		rf.releaseOldLogMemory(firstLogIndex, rf.lastApplied)
+		// 能否保证rf.lastApplied 一定大于firstLogIndex?
+		// 初始化时，lastApplied = firstLogIndex
+		// 安装快照时：lastApplied = firstLogIndex
+		// 正常情况下是不会的,但是就怕有非正常情况
+		if rf.lastApplied >= firstLogIndex {
+			rf.log = rf.log[:rf.lastApplied-firstLogIndex+1] //这里只是从逻辑上截掉了
+		}
 		reply.Success = false
 		return
 	}
 	DPrintf("[%d] receive %s rpc from [%d] accept", rf.me, cmdtype, args.LeaderId)
 
-	// TODO:为什么下面的代码会报DATA RACE
-	//for idx := range args.Entries {
-	//	// 先复制,再追加
-	//	if args.Entries[idx].Index-firstLogIndex < len(rf.log) {
-	//		rf.log[args.Entries[idx].Index-firstLogIndex] = args.Entries[idx] //为什么说这里是在写？
-	//	} else {
-	//		rf.log = append(rf.log, args.Entries[idx:]...)
-	//		break
-	//	}
-	//}
-	////不能进行直接追加,一定是先替换再追加
+	// 重点：不能进行直接追加,一定是先替换再追加
 	copy(rf.log[args.PrevLogIndex+1-firstLogIndex:], args.Entries)
 	if len(args.Entries) > rf.log[len(rf.log)-1].Index-args.PrevLogIndex {
 		rf.log = append(rf.log, args.Entries[rf.log[len(rf.log)-1].Index-args.PrevLogIndex:]...)
