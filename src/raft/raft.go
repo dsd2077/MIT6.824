@@ -62,7 +62,6 @@ const (
 
 const ELECTIONTIMEOUT = 1000
 const HEARTTIMEOUT = 200
-const RPCTIMEOUT = 1000
 
 // A Go object implementing a single Raft peer.
 type Raft struct {
@@ -359,11 +358,13 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	defer rf.mu.Unlock()
 	// Term相等的情况下：只有满足：未曾给别人投票 或者 已经给该candidate投过票了   才能给该candidate投票
 	if args.Term < rf.currentTerm || (args.Term == rf.currentTerm && rf.votedFor != -1 && rf.votedFor != args.CandidateId) {
+		DPrintf("[%d] receive request vote rpc from [%d] refuse case1", rf.me, args.CandidateId)
 		reply.Term = rf.currentTerm
 		reply.VoteGranted = false
 		return
 	}
 	if !rf.isLogUp2Date(args.LastLogTerm, args.LastLogIndex) {
+		DPrintf("[%d] receive request vote rpc from [%d] refuse case2", rf.me, args.CandidateId)
 		reply.Term, reply.VoteGranted = rf.currentTerm, false
 		return
 	}
@@ -373,7 +374,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	}
 
 	rf.votedFor = args.CandidateId
-
 	reply.Term, reply.VoteGranted = rf.currentTerm, true
 	DPrintf("[%d] vote for [%d]", rf.me, args.CandidateId)
 }
@@ -606,7 +606,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = false
 		reply.ExpectLogIndex = rf.log[len(rf.log)-1].Index + 1 //应对大量缺失
 		return
-
 	}
 
 	if len(rf.log) > args.PrevLogIndex-firstLogIndex && rf.log[args.PrevLogIndex-firstLogIndex].Term != args.PrevLogTerm {
@@ -622,8 +621,10 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 	DPrintf("[%d] receive %s rpc from [%d] accept", rf.me, cmdtype, args.LeaderId)
-	//状态转移
-	if args.Term > rf.currentTerm {
+
+	//If the leader's term is **at least as** large as the candidate's current term , then the cadidata recongnizes the leader
+	// as legitimate and returns to follower state
+	if args.Term >= rf.currentTerm {
 		rf.changeState(args.Term, Follower)
 	}
 
@@ -792,16 +793,19 @@ func (rf *Raft) startElection() {
 			ok := rf.sendRequestVote(server, &args, &reply) //这里的请求有可能丢包、延迟、对端宕机
 			rf.mu.Lock()
 			defer rf.mu.Unlock()
-			// 如果当前的Term发生改变，一定会切换为Follower，以前发出的包都不再有效
+			// 发现更大的Term，停止选举
+			if ok && reply.Term > rf.currentTerm {
+				rf.changeState(reply.Term, Follower)
+			}
 			if ok && reply.VoteGranted {
 				votes++
 				DPrintf("[%d] receive vote from [%d]!", rf.me, server)
 			}
 
 			// 如果一个candidate无法获得一个server的选票(要么日志不够新，要么任期号不够大)，那它就不能当选Leader,
-			if ok && !reply.VoteGranted && currentTerm == rf.currentTerm {
-				rf.changeState(reply.Term, Follower)
-			}
+			//if ok && !reply.VoteGranted && currentTerm == rf.currentTerm {
+			//	rf.changeState(reply.Term, Follower)
+			//}
 
 			finished++
 			rf.cond.Broadcast()
