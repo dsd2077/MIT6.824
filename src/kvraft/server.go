@@ -5,6 +5,7 @@ import (
 	"../labrpc"
 	"../raft"
 	"bytes"
+	"fmt"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -28,8 +29,7 @@ type Op struct {
 	Key   string
 	Value string
 	//DoneCh     chan bool
-	ClientIdentifier int64
-	OpIdentifier     int
+	Identifier int64
 }
 
 type KVServer struct {
@@ -44,10 +44,10 @@ type KVServer struct {
 	persister    *raft.Persister
 
 	// Your definitions here.
-	database map[string]string
-	//leader     bool                          //与之交互的Raft是不是server
-	appliedOp  map[int64]map[int]interface{} //用于记录已经执行过的请求，并将结果保存,防止一个请求执行两次,
-	leaderTerm int                           //leader的任期号
+	database   map[string]string
+	leader     bool                  //与之交互的Raft是不是server
+	appliedOp  map[int64]interface{} //用于记录已经执行过的请求，并将结果保存,防止一个请求执行两次,
+	leaderTerm int                   //leader的任期号
 }
 
 // Clerk会调用Get方法
@@ -55,19 +55,19 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	// Your code here.
 	//已经执行过，直接返回
 	kv.mu.Lock()
-	_, exit := kv.appliedOp[args.ClientIdentifier][args.OPIdentifier]
+	_, exit := kv.appliedOp[args.Identifier]
+	kv.mu.Unlock()
 	if exit {
-		*reply = kv.appliedOp[args.ClientIdentifier][args.OPIdentifier].(GetReply)
+		kv.mu.Lock()
+		*reply = kv.appliedOp[args.Identifier].(GetReply)
 		kv.mu.Unlock()
 		return
 	}
 	op := Op{
-		Op:               "Get",
-		Key:              args.Key,
-		ClientIdentifier: args.ClientIdentifier,
-		OpIdentifier:     args.OPIdentifier,
+		Op:         "Get",
+		Key:        args.Key,
+		Identifier: args.Identifier,
 	}
-	kv.mu.Unlock()
 
 	//  这里千万不能加锁！！！这里加锁会导致对端的raft去加锁
 	_, _, ok := kv.rf.Start(op)
@@ -81,9 +81,10 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	kv.mu.Lock()
 	for !exit {
 		kv.cond.Wait()
-		_, exit = kv.appliedOp[op.ClientIdentifier][op.OpIdentifier]
+		_, exit = kv.appliedOp[op.Identifier]
 	}
-	*reply = kv.appliedOp[op.ClientIdentifier][op.OpIdentifier].(GetReply)
+	//能不能进行这样的强制类型转换？
+	*reply = kv.appliedOp[op.Identifier].(GetReply)
 	kv.mu.Unlock()
 	return
 }
@@ -92,20 +93,20 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	// Your code here.
 	//已经执行过，直接返回
 	kv.mu.Lock()
-	_, exit := kv.appliedOp[args.ClientIdentifier][args.OPIdentifier]
+	_, exit := kv.appliedOp[args.Identifier]
+	kv.mu.Unlock()
 	if exit {
-		*reply = kv.appliedOp[args.ClientIdentifier][args.OPIdentifier].(PutAppendReply)
+		kv.mu.Lock()
+		*reply = kv.appliedOp[args.Identifier].(PutAppendReply)
 		kv.mu.Unlock()
 		return
 	}
 	op := Op{
-		Op:               args.Op,
-		Key:              args.Key,
-		Value:            args.Value,
-		ClientIdentifier: args.ClientIdentifier,
-		OpIdentifier:     args.OPIdentifier,
+		Op:         args.Op,
+		Key:        args.Key,
+		Value:      args.Value,
+		Identifier: args.Identifier,
 	}
-	kv.mu.Unlock()
 	_, _, ok := kv.rf.Start(op)
 	// 不是leader直接返回
 	if !ok {
@@ -117,9 +118,10 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	kv.mu.Lock()
 	for !exit {
 		kv.cond.Wait()
-		_, exit = kv.appliedOp[op.ClientIdentifier][op.OpIdentifier]
+		_, exit = kv.appliedOp[op.Identifier]
 	}
-	*reply = kv.appliedOp[op.ClientIdentifier][op.OpIdentifier].(PutAppendReply)
+	//能不能进行这样的强制类型转换？
+	*reply = kv.appliedOp[op.Identifier].(PutAppendReply)
 	kv.mu.Unlock()
 	return
 }
@@ -156,10 +158,7 @@ func (kv *KVServer) applier() {
 		op, _ := reply.Command.(Op)
 
 		kv.mu.Lock()
-		if _, exist := kv.appliedOp[op.ClientIdentifier]; !exist {
-			kv.appliedOp[op.ClientIdentifier] = make(map[int]interface{})
-		}
-		_, exist := kv.appliedOp[op.ClientIdentifier][op.OpIdentifier]
+		_, exist := kv.appliedOp[op.Identifier]
 		// 如果该命令已经执行过，便不再执行
 		// 将执行结果保存在kv.appliedOp中
 		if !exist {
@@ -170,12 +169,12 @@ func (kv *KVServer) applier() {
 				value += op.Value
 				kv.database[op.Key] = value
 				reply.Err = OK
-				kv.appliedOp[op.ClientIdentifier][op.OpIdentifier] = reply
+				kv.appliedOp[op.Identifier] = reply
 			case "Put":
 				reply := PutAppendReply{}
 				kv.database[op.Key] = op.Value
 				reply.Err = OK
-				kv.appliedOp[op.ClientIdentifier][op.OpIdentifier] = reply
+				kv.appliedOp[op.Identifier] = reply
 			case "Get":
 				reply := GetReply{
 					Err:   ErrNoKey,
@@ -186,7 +185,7 @@ func (kv *KVServer) applier() {
 					reply.Value = kv.database[op.Key]
 					reply.Err = OK
 				}
-				kv.appliedOp[op.ClientIdentifier][op.OpIdentifier] = reply
+				kv.appliedOp[op.Identifier] = reply
 			}
 		}
 		kv.mu.Unlock()
@@ -197,16 +196,22 @@ func (kv *KVServer) applier() {
 }
 
 func (kv *KVServer) installSnapshot(snapshot []byte) {
+	//fmt.Printf("安装快照")
 	r := bytes.NewBuffer(snapshot)
 	d := labgob.NewDecoder(r)
 	var database map[string]string
-	var appliedOp map[int64]map[int]interface{}
-	d.Decode(&database)
-	d.Decode(&appliedOp)
+	//var appliedOp map[int64]interface{}
+	err := d.Decode(&database)
+	if err != nil {
+		fmt.Printf("反序列化失败")
+		return
+	}
+	//err = d.Decode(&appliedOp)
+
 	kv.mu.Lock()
 	kv.database = database
-	kv.appliedOp = appliedOp
 	kv.mu.Unlock()
+	//fmt.Printf("安装快照成功")
 }
 
 func (kv *KVServer) checkSnapShot(lastIncludedIndex int, lastIncludedTerm int) {
@@ -214,7 +219,7 @@ func (kv *KVServer) checkSnapShot(lastIncludedIndex int, lastIncludedTerm int) {
 		w := new(bytes.Buffer)
 		e := labgob.NewEncoder(w)
 		e.Encode(kv.database)
-		e.Encode(kv.appliedOp)
+		//e.Encode(kv.appliedOp)
 		snapshot := w.Bytes()
 		// TODO：这里加go与不加go的区别？
 		go kv.rf.LogCompaction(lastIncludedIndex, lastIncludedTerm, snapshot)
@@ -244,7 +249,7 @@ func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persiste
 
 	// You may need initialization code here.
 	kv.database = make(map[string]string)
-	kv.appliedOp = make(map[int64]map[int]interface{})
+	kv.appliedOp = make(map[int64]interface{})
 	kv.applyCh = make(chan raft.ApplyMsg)
 	kv.rf = raft.Make(servers, me, persister, kv.applyCh)
 

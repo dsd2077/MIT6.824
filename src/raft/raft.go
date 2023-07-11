@@ -164,7 +164,7 @@ func (rf *Raft) readPersist(data []byte) bool {
 	rf.currentTerm = currentTerm
 	rf.votedFor = votedFor
 	rf.log = log
-	DPrintf("[%d] read persist")
+	DPrintf("[%d] read persist", rf.me)
 	rf.printEntry()
 
 	//下面两个信息由于没有持久化，是否需要将下面两个信息也持久化？
@@ -235,7 +235,8 @@ func (rf *Raft) InstallSnapShot(args *InstallSnapShotArgs, reply *InstallSnapSho
 		reply.Success = false
 		return
 	}
-	if rf.lastApplied >= rf.lastIncludedIndex {
+	if rf.lastApplied >= args.LastIncludedIndex {
+		DPrintf("[%d] receive snapshot from [%d] accept case1", rf.me, args.LeaderId)
 		reply.Success = true
 		return
 	}
@@ -270,15 +271,15 @@ func (rf *Raft) InstallSnapShot(args *InstallSnapShotArgs, reply *InstallSnapSho
 	rf.commitIndex = args.LastIncludedIndex
 
 	//发送snapshot给kvserver，使用snapshot重置状态机
-	go func() {
-		msg := ApplyMsg{
-			CommandValid: false,
-			Snapshot:     args.Data,
-			CommandIndex: 0,
-			CommandTerm:  0,
-		}
-		rf.applyCh <- msg
-	}()
+	//go func() {
+	msg := ApplyMsg{
+		CommandValid: false,
+		Snapshot:     args.Data,
+		CommandIndex: 0,
+		CommandTerm:  0,
+	}
+	rf.applyCh <- msg
+	//}()
 
 	reply.Success = true
 	DPrintf("[%d] finish install snapshot from [%d]", rf.me, args.LeaderId)
