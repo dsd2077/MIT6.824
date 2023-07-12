@@ -13,8 +13,9 @@ type Clerk struct {
 	//猜测：ClientEnd就是kvserver
 	servers []*labrpc.ClientEnd
 	// You will have to modify this struct.
-	leader int
-	//mu               sync.Mutex
+	leader   int
+	clientId int64
+	opId     int
 }
 
 func nrand() int64 {
@@ -29,6 +30,8 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	ck.servers = servers
 	// You'll have to add code here.
 	ck.leader = 0
+	ck.clientId = nrand()
+	ck.opId = 0
 	return ck
 }
 
@@ -61,8 +64,9 @@ func (ck *Clerk) Get(key string) string {
 	//start := time.Now()
 	// You will have to modify this function.
 	args := GetArgs{
-		Key:        key,
-		Identifier: nrand(),
+		Key:      key,
+		ClientId: ck.clientId,
+		OpId:     ck.opId,
 	}
 
 	for {
@@ -78,6 +82,7 @@ func (ck *Clerk) Get(key string) string {
 			//DPrintf("clerk receive Get reply from kvserver [%d]", leaderId)
 			//elapsed := time.Since(start) // 计算代码执行时间
 			//fmt.Printf("Get op cost [%s]", elapsed)
+			ck.opId++
 			return reply.Value
 		}
 	}
@@ -94,10 +99,11 @@ func (ck *Clerk) Get(key string) string {
 func (ck *Clerk) PutAppend(key string, value string, op string) {
 	// You will have to modify this function.
 	args := PutAppendArgs{
-		Key:        key,
-		Value:      value,
-		Op:         op,
-		Identifier: nrand(),
+		Key:      key,
+		Value:    value,
+		Op:       op,
+		ClientId: ck.clientId,
+		OpId:     ck.opId,
 	}
 	// 就算发给正确的leader，也有可能出现丢包、延迟、宕机等情况
 	for {
@@ -110,6 +116,7 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 			ck.leader = (ck.leader + 1) % len(ck.servers)
 			time.Sleep(50 * time.Millisecond)
 		} else {
+			ck.opId++
 			//DPrintf("clerk receive PutAppend reply from kvserver [%d]", leaderId)
 			break
 		}

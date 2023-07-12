@@ -160,15 +160,17 @@ func (rf *Raft) readPersist(data []byte) bool {
 		DPrintf("ClientEnd.Call(): decode reply: %v\n", err)
 		return false
 	}
+	rf.mu.Lock()
 	rf.currentTerm = currentTerm
 	rf.votedFor = votedFor
 	rf.log = log
-	DPrintf("[%d] read persist", rf.me)
-	rf.printEntry()
 
 	//下面两个信息由于没有持久化，是否需要将下面两个信息也持久化？
 	rf.lastApplied = rf.log[0].Index
 	rf.commitIndex = rf.log[0].Index
+	rf.printEntry()
+	rf.mu.Unlock()
+	DPrintf("[%d] read persist", rf.me)
 	return true
 }
 
@@ -496,10 +498,15 @@ func (rf *Raft) sendAppendEntries() {
 
 			// 此时rf.log中至少有两个元素
 			targetIndex := rf.nextIndex[server] - firstLogIndex
+			// TODO:在什么情况下会发生？
+			if targetIndex > len(rf.log) {
+				rf.mu.Unlock()
+				return
+			}
 			arg := AppendEntriesArgs{
 				Term:         currentTerm,
 				LeaderId:     rf.me,
-				Entries:      rf.log[targetIndex:], //如果没有更多的日志，则为[]  这里可能会越界。为什么？——发送跳的过程中，Leader的状态发生了改变，log被改写
+				Entries:      rf.log[targetIndex:], //如果没有更多的日志，则为[]  这里可能会越界。为什么？——发送心跳的过程中，Leader的状态发生了改变，log被改写
 				PrevLogIndex: rf.log[targetIndex-1].Index,
 				PrevLogTerm:  rf.log[targetIndex-1].Term,
 				LeaderCommit: rf.commitIndex,
@@ -679,9 +686,9 @@ func (rf *Raft) commit(leaderCommit int) {
 		DPrintf("[%d] apply [%d]", rf.me, msg.CommandIndex)
 	}
 
+	rf.printEntry()
 	rf.mu.Unlock()
 	//DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
-	rf.printEntry()
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
