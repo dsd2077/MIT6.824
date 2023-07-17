@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -223,7 +224,7 @@ func (rf *Raft) InstallSnapShot(args *InstallSnapShotArgs, reply *InstallSnapSho
 	defer rf.mu.Unlock()
 	reply.Term = rf.currentTerm
 	if args.Term < rf.currentTerm {
-		DPrintf("[%d] receive snapshot from [%d] refuse case1", rf.me, args.LeaderId)
+		DPrintf("[%d] receive snapshot from [%d].lastIncludedIndex [%d] refuse case1", rf.me, args.LeaderId, args.LastIncludedIndex)
 		reply.Success = false
 		return
 	}
@@ -232,16 +233,16 @@ func (rf *Raft) InstallSnapShot(args *InstallSnapShotArgs, reply *InstallSnapSho
 	lastLogIndex := rf.log[len(rf.log)-1].Index
 	// 在网络延迟的情况下先发送的InstallSnapShot RPC后抵达
 	if firstLogIndex >= args.LastIncludedIndex {
-		DPrintf("[%d] receive snapshot from [%d] refuse case2", rf.me, args.LeaderId)
+		DPrintf("[%d] receive snapshot from [%d].lastIncludedIndex [%d] refuse case2", rf.me, args.LeaderId, args.LastIncludedIndex)
 		reply.Success = false
 		return
 	}
 	if rf.lastApplied >= args.LastIncludedIndex {
-		DPrintf("[%d] receive snapshot from [%d] accept case1", rf.me, args.LeaderId)
+		DPrintf("[%d] receive snapshot from [%d].lastIncludedIndex [%d] accept case1", rf.me, args.LeaderId, args.LastIncludedIndex)
 		reply.Success = true
 		return
 	}
-	DPrintf("[%d] receive snapshot from [%d] accept", rf.me, args.LeaderId)
+	DPrintf("[%d] receive snapshot from [%d].lastIncludedIndex [%d] accept ", rf.me, args.LeaderId, args.LastIncludedIndex)
 
 	// 保存snapshot
 	rf.persistSnapshot(args.Data)
@@ -302,9 +303,10 @@ func (rf *Raft) releaseOldLogMemory(firstLogIndex int, lastIncludedIndex int) {
 }
 
 func (rf *Raft) sendInstallSnapShotRPC(server int, currentTerm int) {
+	DPrintf("[%d] send snapshot to [%d] lastIncludedIndex:[%d]", rf.me, server, rf.lastIncludedIndex)
 
-	data := rf.persister.ReadSnapshot()
 	rf.mu.Lock()
+	data := rf.persister.ReadSnapshot()
 	args := InstallSnapShotArgs{
 		Term:              rf.currentTerm,
 		LeaderId:          rf.me,
@@ -331,7 +333,7 @@ func (rf *Raft) sendInstallSnapShotRPC(server int, currentTerm int) {
 	if reply.Success {
 		rf.nextIndex[server] = rf.lastIncludedIndex + 1
 		rf.matchIndex[server] = rf.lastIncludedIndex
-		DPrintf("[%d] send snapshot success rf.nextIndex[server] : [%d] rf.matchIndex[server] : [%d]", rf.me, rf.nextIndex[server], rf.matchIndex[server])
+		DPrintf("[%d] send snapshot to [%d] lastIncludedIndex:[%d] success", rf.me, server, rf.lastIncludedIndex)
 		rf.updateCommitIndex()
 	}
 }
@@ -452,7 +454,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.log = append(rf.log, entry)
 	rf.persist() //立即持久化
 	rf.mu.Unlock()
-	DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, index)
+	//fmt.Println("[", rf.me, "]", "begin agreement cmd ", command, "index:", index)
 	// 立刻发起复制
 	go func() {
 		//start := time.Now()
@@ -580,7 +582,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//case1
 	cmdtype := "heartbeat"
 	if len(args.Entries) != 0 {
-		cmdtype = "appendEntry"
+		cmdtype = "log " + "[" + strconv.Itoa(args.Entries[0].Index) + ":" + strconv.Itoa(args.Entries[len(args.Entries)-1].Index) + "]"
 	}
 	firstLogIndex := rf.log[0].Index
 	//DPrintf(
@@ -683,7 +685,7 @@ func (rf *Raft) commit(leaderCommit int) {
 			CommandTerm:  rf.log[rf.commitIndex-firstLogIndex].Term,
 		}
 		rf.applyCh <- msg //这里被阻塞了，
-		DPrintf("[%d] apply [%d]", rf.me, msg.CommandIndex)
+		//fmt.Println("[", rf.me, "]", "apply  cmd ", "[", msg.CommandIndex, "] ", msg.Command)
 	}
 
 	rf.printEntry()
@@ -744,7 +746,7 @@ func (rf *Raft) apply() {
 			CommandTerm:  rf.log[rf.lastApplied-firstLogIndex].Term,
 		}
 		rf.applyCh <- msg
-		DPrintf("[%d] apply [%d]", rf.me, msg.CommandIndex)
+		//fmt.Println("[", rf.me, "]", "apply  cmd ", "[", msg.CommandIndex, "] ", msg.Command)
 		if rf.lastApplied == rf.commitIndex {
 			DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
 			rf.printEntry()

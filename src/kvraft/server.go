@@ -148,6 +148,7 @@ func (kv *KVServer) Kill() {
 	atomic.StoreInt32(&kv.dead, 1)
 	kv.rf.Kill()
 	// Your code here, if desired.
+	//被kill之前是否需要进行日志压缩？
 }
 
 func (kv *KVServer) killed() bool {
@@ -187,8 +188,10 @@ func (kv *KVServer) applier() {
 	}
 }
 
+// 安装快照之后有两个参数没更新： kv.lastIncludedIndex/kv.lastIncludedTerm
+// 如果不更新会不会有问题？
 func (kv *KVServer) installSnapshot(snapshot []byte) {
-	//fmt.Printf("安装快照")
+	//fmt.Printf("[%d] 安装快照", kv.me)
 	r := bytes.NewBuffer(snapshot)
 	d := labgob.NewDecoder(r)
 	var database map[string]string
