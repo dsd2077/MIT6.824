@@ -90,15 +90,18 @@ func TestBasic(t *testing.T) {
 	cfa[0] = ck.Query(-1)
 
 	check(t, []int{}, ck)
+	DPrintf("1111")
 
 	var gid1 int = 1
 	ck.Join(map[int][]string{gid1: []string{"x", "y", "z"}})
 	check(t, []int{gid1}, ck)
+	DPrintf("2222")
 	cfa[1] = ck.Query(-1)
 
 	var gid2 int = 2
 	ck.Join(map[int][]string{gid2: []string{"a", "b", "c"}})
 	check(t, []int{gid1, gid2}, ck)
+	DPrintf("3333")
 	cfa[2] = ck.Query(-1)
 
 	cfx := ck.Query(-1)
@@ -124,6 +127,7 @@ func TestBasic(t *testing.T) {
 
 	for s := 0; s < nservers; s++ {
 		cfg.ShutdownServer(s)
+		DPrintf("shudownserver [%d]", s)
 		for i := 0; i < len(cfa); i++ {
 			c := ck.Query(cfa[i].Num)
 			check_same_config(t, c, cfa[i])
