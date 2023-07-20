@@ -440,10 +440,13 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	if rf.killed() || !rf.isLeader() {
 		return -1, -1, false
 	}
-	//fmt.Printf("[%d] receive cmd [%s]\n", rf.me, command)
+	//if Debug > 0 {
+	//	fmt.Printf("[%d] receive cmd [%s]\n", rf.me, command)
+	//}
+	if Debug > 0 {
+		fmt.Println("[", rf.me, "]", "receive cmd ", command)
+	}
 	rf.mu.Lock() //这里需要加锁，如果别的地方把锁给占了，就拿不到锁
-	//DPrintf("[%d] begin agreement on  cmd [%d]", rf.me, command)
-
 	term := rf.currentTerm
 	index := rf.log[len(rf.log)-1].Index + 1
 	entry := Entry{
@@ -454,7 +457,10 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.log = append(rf.log, entry)
 	rf.persist() //立即持久化
 	rf.mu.Unlock()
-	//fmt.Println("[", rf.me, "]", "begin agreement cmd ", command, "index:", index)
+	if Debug > 0 {
+		fmt.Println("[", rf.me, "]", "begin agreement cmd ", command, "index:", index)
+	}
+
 	// 立刻发起复制
 	go func() {
 		//start := time.Now()
@@ -486,7 +492,6 @@ func (rf *Raft) sendAppendEntries() {
 				rf.mu.Unlock()
 				return
 			}
-			//DPrintf("[%d] send heart beat to [%d]", rf.me, server)
 
 			// 要发送给follower的日志不存在。
 			firstLogIndex := rf.log[0].Index
@@ -514,10 +519,18 @@ func (rf *Raft) sendAppendEntries() {
 				LeaderCommit: rf.commitIndex,
 			}
 			newNextIndex := rf.log[len(rf.log)-1].Index + 1
+			DPrintf(
+				"[%d] send rpc to [%d] prevLogIndex : [%d], firstLogIndex : [%d], len(arg.Entries) : [%d]",
+				rf.me,
+				server,
+				rf.log[targetIndex-1].Index,
+				targetIndex,
+				len(arg.Entries),
+			)
 			rf.mu.Unlock()
 
 			// 发送RPC不能加锁
-			ok := rf.peers[server].Call("Raft.AppendEntries", &arg, &reply) //
+			ok := rf.peers[server].Call("Raft.AppendEntries", &arg, &reply)
 
 			rf.mu.Lock()
 			defer rf.mu.Unlock()
@@ -531,9 +544,12 @@ func (rf *Raft) sendAppendEntries() {
 			}
 			// 发送成功
 			if reply.Success {
-				rf.nextIndex[server] = newNextIndex
-				rf.matchIndex[server] = newNextIndex - 1
-				rf.updateCommitIndex()
+				if newNextIndex > rf.nextIndex[server] {
+					rf.nextIndex[server] = newNextIndex
+					rf.matchIndex[server] = newNextIndex - 1
+					rf.updateCommitIndex()
+				}
+				DPrintf("[%d] send rpc to [%d] success, nextIndex is [%d]", rf.me, server, rf.nextIndex[server])
 			} else {
 				// 发送失败
 				rf.nextIndex[server] = reply.ExpectLogIndex
@@ -585,16 +601,16 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		cmdtype = "log " + "[" + strconv.Itoa(args.Entries[0].Index) + ":" + strconv.Itoa(args.Entries[len(args.Entries)-1].Index) + "]"
 	}
 	firstLogIndex := rf.log[0].Index
-	//DPrintf(
-	//	"[%d] receive %s rpc from [%d] prevLogIndex : [%d], firstLogIndex : [%d], len(rf.log) : [%d], len(args.Entries) : [%d]",
-	//	rf.me,
-	//	cmdtype,
-	//	args.LeaderId,
-	//	args.PrevLogIndex,
-	//	firstLogIndex,
-	//	len(rf.log),
-	//	len(args.Entries),
-	//)
+	DPrintf(
+		"[%d] receive %s rpc from [%d] prevLogIndex : [%d], firstLogIndex : [%d], len(rf.log) : [%d], len(args.Entries) : [%d]",
+		rf.me,
+		cmdtype,
+		args.LeaderId,
+		args.PrevLogIndex,
+		firstLogIndex,
+		len(rf.log),
+		len(args.Entries),
+	)
 	if args.Term < rf.currentTerm {
 		DPrintf("[%d] receive %s rpc from [%d] refuse case1", rf.me, cmdtype, args.LeaderId)
 		reply.Success = false
@@ -654,21 +670,24 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		DPrintf("follower [%d] begin to commit", rf.me)
 		go rf.commit(args.LeaderCommit)
 	}
+
 	reply.Success = true
+	rf.printEntry()
 }
 
 func (rf *Raft) printEntry() {
 	// 打印结果
 	if Debug > 0 {
-		//for _, entry := range rf.log {
-		//	fmt.Println(entry.Index, "   ", entry.Term, "   ", entry.Cmd)
-		//	if entry.Index == rf.lastApplied {
-		//		fmt.Println("committed")
-		//	}
-		//}
 		DPrintf("log content of [%d] :", rf.me)
-		fmt.Println(rf.log[0].Index, "   ", rf.log[0].Term, "   ", rf.log[0].Cmd)
-		fmt.Println(rf.log[len(rf.log)-1].Index, "   ", rf.log[len(rf.log)-1].Term, "   ", rf.log[len(rf.log)-1].Cmd)
+		for _, entry := range rf.log {
+			fmt.Println(entry.Index, "   ", entry.Term, "   ", entry.Cmd)
+			if entry.Index == rf.lastApplied {
+				fmt.Println("committed")
+			}
+		}
+		//DPrintf("log content of [%d] :", rf.me)
+		//fmt.Println(rf.log[0].Index, "   ", rf.log[0].Term, "   ", rf.log[0].Cmd)
+		//fmt.Println(rf.log[len(rf.log)-1].Index, "   ", rf.log[len(rf.log)-1].Term, "   ", rf.log[len(rf.log)-1].Cmd)
 	}
 }
 
@@ -685,12 +704,14 @@ func (rf *Raft) commit(leaderCommit int) {
 			CommandTerm:  rf.log[rf.commitIndex-firstLogIndex].Term,
 		}
 		rf.applyCh <- msg //这里被阻塞了，
-		//fmt.Println("[", rf.me, "]", "apply  cmd ", "[", msg.CommandIndex, "] ", msg.Command)
+		if Debug > 0 {
+			fmt.Println("[", rf.me, "]", "apply  cmd ", "[", msg.CommandIndex, "] ", msg.Command)
+		}
 	}
 
 	rf.printEntry()
+	DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
 	rf.mu.Unlock()
-	//DPrintf("[%d] lastApplied : [%d]---commitIndex : [%d]---len(rf.log) : [%d]", rf.me, rf.lastApplied, rf.commitIndex, len(rf.log))
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,

@@ -37,6 +37,9 @@ func check(t *testing.T, groups []int, ck *Clerk) {
 	for _, g := range c.Shards {
 		counts[g] += 1
 	}
+	//for gid, shards := range counts {
+	//	fmt.Println(gid, " : ", shards)
+	//}
 	min := 257
 	max := 0
 	for g, _ := range c.Groups {
@@ -381,4 +384,40 @@ func TestMulti(t *testing.T) {
 	}
 
 	fmt.Printf("  ... Passed\n")
+}
+
+func TestConcurrent(t *testing.T) {
+	const nservers = 3
+	cfg := make_config(t, nservers, false)
+	defer cfg.cleanup()
+
+	ck := cfg.makeClient(cfg.All())
+	fmt.Printf("Test: Concurrent leave/join ...\n")
+
+	const npara = 10
+	var cka [npara]*Clerk
+	for i := 0; i < len(cka); i++ {
+		cka[i] = cfg.makeClient(cfg.All())
+	}
+	gids := make([]int, npara)
+	ch := make(chan bool)
+	for xi := 0; xi < npara; xi++ {
+		gids[xi] = int((xi * 10) + 100)
+		go func(i int) {
+			defer func() { ch <- true }()
+			var gid int = gids[i]
+			var sid1 = fmt.Sprintf("s%da", gid)
+			var sid2 = fmt.Sprintf("s%db", gid)
+			cka[i].Join(map[int][]string{gid + 1000: []string{sid1}})
+			cka[i].Join(map[int][]string{gid: []string{sid2}})
+			cka[i].Leave([]int{gid + 1000})
+		}(xi)
+	}
+	for i := 0; i < npara; i++ {
+		<-ch
+	}
+	check(t, gids, ck)
+
+	fmt.Printf("  ... Passed\n")
+
 }

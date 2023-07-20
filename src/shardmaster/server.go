@@ -2,6 +2,7 @@ package shardmaster
 
 import (
 	"../raft"
+	"fmt"
 	"math"
 	"time"
 )
@@ -49,7 +50,7 @@ func (sm *ShardMaster) Join(args *JoinArgs, reply *JoinReply) {
 
 	op := Op{
 		Op:       "Join",
-		Args:     args, //这里能传指针吗？——我猜应该是不行
+		Args:     *args, //这里能传指针吗？——我猜应该是不行
 		Owner:    sm.me,
 		ApplyCh:  make(chan bool),
 		ClientId: args.ClientId,
@@ -89,7 +90,7 @@ func (sm *ShardMaster) Leave(args *LeaveArgs, reply *LeaveReply) {
 
 	op := Op{
 		Op:       "Leave",
-		Args:     args,
+		Args:     *args,
 		Owner:    sm.me,
 		ApplyCh:  make(chan bool),
 		ClientId: args.ClientId,
@@ -128,7 +129,7 @@ func (sm *ShardMaster) Move(args *MoveArgs, reply *MoveReply) {
 
 	op := Op{
 		Op:       "Move",
-		Args:     args,
+		Args:     *args,
 		Owner:    sm.me,
 		ApplyCh:  make(chan bool),
 		ClientId: args.ClientId,
@@ -157,6 +158,13 @@ func (sm *ShardMaster) Query(args *QueryArgs, reply *QueryReply) {
 	// Your code here.
 	// 已经应用到状态机中的配置一定是达成一致的,不管是不是leader都可以直接返回
 	sm.mu.Lock()
+	if Debug > 0 {
+		confs := make([]int, 0)
+		for _, conf := range sm.configs {
+			confs = append(confs, conf.Num)
+		}
+		fmt.Println(sm.me, " confs : ", confs)
+	}
 	if 0 <= args.Num && args.Num <= sm.configs[len(sm.configs)-1].Num {
 		reply.WrongLeader = false
 		reply.Config = sm.configs[args.Num]
@@ -189,11 +197,6 @@ func (sm *ShardMaster) Query(args *QueryArgs, reply *QueryReply) {
 		reply.Err = "request time out"
 		reply.WrongLeader = true
 	case <-op.ApplyCh:
-		//confs := make([]int, 0)
-		//for _, conf := range sm.configs {
-		//	confs = append(confs, conf.Num)
-		//}
-		//fmt.Println(sm.me, " confs : ", confs)
 		reply.WrongLeader = false
 		sm.mu.Lock()
 		if args.Num == -1 || args.Num >= len(sm.configs) {
@@ -228,52 +231,6 @@ func (sm *ShardMaster) shards2group(groups map[int][]string, shards [NShards]int
 	}
 
 	return g2s
-}
-
-func (sm *ShardMaster) rebalanceJoin(args *JoinArgs) Config {
-	lastGroups := sm.configs[len(sm.configs)-1].Groups //这样得到的是引用
-	lastShards := sm.configs[len(sm.configs)-1].Shards
-
-	newGroups := sm.copyGroup(lastGroups)
-	// 添加新的group
-	for gid, servers := range args.Servers {
-		if _, exist := newGroups[gid]; !exist {
-			newGroups[gid] = servers
-		}
-	}
-	g2s := sm.shards2group(newGroups, lastShards)
-	//DPrintf("-------before balance--------")
-	//for gid, shards := range g2s {
-	//	println("gid : ", gid, "shards : ", shards)
-	//}
-
-	for {
-		// 具有最少和最多分片数量的group
-		minGid, maxGid := sm.findMinShardsGroup(g2s), sm.findMaxShardsGroup(g2s)
-		if maxGid != 0 && len(g2s[maxGid])-len(g2s[minGid]) <= 1 {
-			break
-		}
-		g2s[minGid] = append(g2s[minGid], g2s[maxGid][0])
-		g2s[maxGid] = g2s[maxGid][1:]
-	}
-	//DPrintf("-----after balance----")
-	//for gid, shards := range g2s {
-	//	println("gid : ", gid, "shards : ", shards)
-	//}
-
-	newShards := [NShards]int{}
-	for gid, shards := range g2s {
-		for _, shard := range shards {
-			newShards[shard] = gid
-		}
-	}
-	config := Config{
-		Num:    len(sm.configs),
-		Shards: newShards,
-		Groups: newGroups,
-	}
-
-	return config
 }
 
 // 找到具有最多分片数的组，并返回gid
@@ -329,6 +286,54 @@ func (sm *ShardMaster) rebalanceMove(args *MoveArgs) Config {
 	return config
 }
 
+func (sm *ShardMaster) rebalanceJoin(args *JoinArgs) Config {
+	lastGroups := sm.configs[len(sm.configs)-1].Groups //这样得到的是引用
+	lastShards := sm.configs[len(sm.configs)-1].Shards
+
+	newGroups := sm.copyGroup(lastGroups)
+	// 添加新的group
+	for gid, servers := range args.Servers {
+		if _, exist := newGroups[gid]; !exist {
+			newGroups[gid] = servers
+		} else {
+			newGroups[gid] = append(newGroups[gid], servers...)
+		}
+	}
+	g2s := sm.shards2group(newGroups, lastShards)
+	//DPrintf("-------before balance--------")
+	//for gid, shards := range g2s {
+	//	println("gid : ", gid, "shards : ", shards)
+	//}
+
+	for {
+		// 具有最少和最多分片数量的group
+		minGid, maxGid := sm.findMinShardsGroup(g2s), sm.findMaxShardsGroup(g2s)
+		if maxGid != 0 && len(g2s[maxGid])-len(g2s[minGid]) <= 1 {
+			break
+		}
+		g2s[minGid] = append(g2s[minGid], g2s[maxGid][0])
+		g2s[maxGid] = g2s[maxGid][1:]
+	}
+	//DPrintf("-----after balance----")
+	//for gid, shards := range g2s {
+	//	println("gid : ", gid, "shards : ", shards)
+	//}
+
+	newShards := [NShards]int{}
+	for gid, shards := range g2s {
+		for _, shard := range shards {
+			newShards[shard] = gid
+		}
+	}
+	config := Config{
+		Num:    len(sm.configs),
+		Shards: newShards,
+		Groups: newGroups,
+	}
+
+	return config
+}
+
 func (sm *ShardMaster) rebalanceLeave(args *LeaveArgs) Config {
 	lastGroups := sm.configs[len(sm.configs)-1].Groups //这样得到的是引用
 	lastShards := sm.configs[len(sm.configs)-1].Shards
@@ -336,7 +341,7 @@ func (sm *ShardMaster) rebalanceLeave(args *LeaveArgs) Config {
 	newGroups := sm.copyGroup(lastGroups)
 	g2s := sm.shards2group(newGroups, lastShards)
 
-	remainderShards := make([]int, 1)
+	remainderShards := make([]int, 0)
 	for _, gid := range args.GIDs {
 		_, exist := g2s[gid]
 		if exist {
@@ -383,10 +388,9 @@ func (sm *ShardMaster) Raft() *raft.Raft {
 
 // 接收来自Raft的日志，并将日志应用到状态机
 func (sm *ShardMaster) applier() {
-	var newConfig Config
 	for {
 		reply := <-sm.applyCh
-		DPrintf("[%d] receive apply message", sm.me)
+		//DPrintf("[%d] receive apply message", sm.me)
 		op, _ := reply.Command.(Op)
 
 		sm.mu.Lock()
@@ -395,17 +399,19 @@ func (sm *ShardMaster) applier() {
 			switch op.Op {
 			case "Query":
 			case "Join":
-				args := op.Args.(*JoinArgs)
-				newConfig = sm.rebalanceJoin(args)
+				args := op.Args.(JoinArgs)
+				newConfig := sm.rebalanceJoin(&args)
+				sm.configs = append(sm.configs, newConfig)
 			case "Leave":
-				args := op.Args.(*LeaveArgs)
-				newConfig = sm.rebalanceLeave(args)
+				args := op.Args.(LeaveArgs)
+				newConfig := sm.rebalanceLeave(&args)
+				sm.configs = append(sm.configs, newConfig)
 			case "Move":
-				args := op.Args.(*MoveArgs)
-				newConfig = sm.rebalanceMove(args)
+				args := op.Args.(MoveArgs)
+				newConfig := sm.rebalanceMove(&args)
+				sm.configs = append(sm.configs, newConfig)
 			}
 
-			sm.configs = append(sm.configs, newConfig)
 			sm.appliedOp[op.ClientId] = op.OpId
 		}
 		//在回放日志时，过去的日志不需要再发送消息,只对当前任期的消息发送回执
@@ -414,9 +420,7 @@ func (sm *ShardMaster) applier() {
 			continue
 		}
 		sm.mu.Unlock()
-		DPrintf("[%d] send reply to op [%d]", sm.me, op.OpId)
 		op.ApplyCh <- true
-		DPrintf("[%d] finish send reply to op [%d]", sm.me, op.OpId)
 	}
 }
 
@@ -432,6 +436,10 @@ func StartServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persister)
 	sm.configs[0].Groups = map[int][]string{}
 
 	labgob.Register(Op{})
+	labgob.Register(JoinArgs{})
+	labgob.Register(LeaveArgs{})
+	labgob.Register(MoveArgs{})
+	labgob.Register(QueryArgs{})
 	sm.applyCh = make(chan raft.ApplyMsg)
 	sm.rf = raft.Make(servers, me, persister, sm.applyCh)
 
