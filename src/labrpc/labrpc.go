@@ -217,12 +217,14 @@ func (rn *Network) processReq(req reqMsg) {
 	enabled, servername, server, reliable, longreordering := rn.readEndnameInfo(req.endname)
 
 	if enabled && servername != nil && server != nil {
+		// 随机延迟
 		if reliable == false {
 			// short delay
 			ms := (rand.Int() % 27)
 			time.Sleep(time.Duration(ms) * time.Millisecond)
 		}
 
+		// 1/10概率丢包
 		if reliable == false && (rand.Int()%1000) < 100 {
 			// drop the request, return as if timeout
 			req.replyCh <- replyMsg{false, nil}
@@ -377,11 +379,9 @@ func (rn *Network) GetTotalBytes() int64 {
 	return x
 }
 
-//
 // a server is a collection of services, all sharing
 // the same rpc dispatcher. so that e.g. both a Raft
 // and a k/v server can listen to the same rpc endpoint.
-//
 type Server struct {
 	mu       sync.Mutex
 	services map[string]*Service

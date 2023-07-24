@@ -354,6 +354,7 @@ func make_config(t *testing.T, n int, unreliable bool, maxraftstate int) *config
 	}
 	cfg.mck = cfg.shardclerk()
 
+	// 创建3个组，gid分别为100、/101、/102
 	cfg.ngroups = 3
 	cfg.groups = make([]*group, cfg.ngroups)
 	cfg.n = n
@@ -365,6 +366,7 @@ func make_config(t *testing.T, n int, unreliable bool, maxraftstate int) *config
 		gg.saved = make([]*raft.Persister, cfg.n)
 		gg.endnames = make([][]string, cfg.n)
 		gg.mendnames = make([][]string, cfg.nmasters)
+		//启动组内的每一个server
 		for i := 0; i < cfg.n; i++ {
 			cfg.StartServer(gi, i)
 		}

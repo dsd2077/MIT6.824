@@ -174,7 +174,7 @@ func (sm *ShardMaster) Query(args *QueryArgs, reply *QueryReply) {
 	sm.mu.Unlock()
 
 	//args.Num == -1 or args.Num > len(sm.configs)
-	//想要最想的日志()，必须确认是leader
+	//想要最新的日志()，必须确认是leader
 	op := Op{
 		Op:       "Query",
 		Owner:    sm.me,

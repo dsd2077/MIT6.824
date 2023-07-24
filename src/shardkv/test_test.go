@@ -20,9 +20,7 @@ func check(t *testing.T, ck *Clerk, key string, value string) {
 	}
 }
 
-//
 // test static 2-way sharding, without shard movement.
-//
 func TestStaticShards(t *testing.T) {
 	fmt.Printf("Test: static shards ...\n")
 
@@ -45,6 +43,7 @@ func TestStaticShards(t *testing.T) {
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 	}
+	DPrintf("1111")
 
 	// make sure that the data really is sharded by
 	// shutting down one shard and checking that some
@@ -316,9 +315,11 @@ func TestConcurrent1(t *testing.T) {
 	var done int32
 	ch := make(chan bool)
 
+	//每个 goroutine 都有自己的 Clerk 对象实例，它们是相互独立的，互不影响。
 	ff := func(i int) {
 		defer func() { ch <- true }()
 		ck1 := cfg.makeClient()
+		//循环写
 		for atomic.LoadInt32(&done) == 0 {
 			x := randstring(5)
 			ck1.Append(ka[i], x)
@@ -331,6 +332,7 @@ func TestConcurrent1(t *testing.T) {
 		go ff(i)
 	}
 
+	//并发写的过程中发生配置变更
 	time.Sleep(150 * time.Millisecond)
 	cfg.join(1)
 	time.Sleep(500 * time.Millisecond)
@@ -338,6 +340,7 @@ func TestConcurrent1(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 	cfg.leave(0)
 
+	//将所有replica group关闭
 	cfg.ShutdownGroup(0)
 	time.Sleep(100 * time.Millisecond)
 	cfg.ShutdownGroup(1)
@@ -359,6 +362,7 @@ func TestConcurrent1(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
+	//停止写
 	atomic.StoreInt32(&done, 1)
 	for i := 0; i < n; i++ {
 		<-ch
@@ -371,10 +375,8 @@ func TestConcurrent1(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // this tests the various sources from which a re-starting
 // group might need to fetch shard contents.
-//
 func TestConcurrent2(t *testing.T) {
 	fmt.Printf("Test: more concurrent puts and configuration changes...\n")
 
@@ -409,6 +411,7 @@ func TestConcurrent2(t *testing.T) {
 		}
 	}
 
+	//所有 goroutine 共享同一个 Clerk 对象实例，它们在循环中对该对象进行操作，因此可能存在并发访问的问题。
 	for i := 0; i < n; i++ {
 		ck1 := cfg.makeClient()
 		go ff(i, ck1)
@@ -656,10 +659,8 @@ func TestUnreliable3(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // optional test to see whether servers are deleting
 // shards for which they are no longer responsible.
-//
 func TestChallenge1Delete(t *testing.T) {
 	fmt.Printf("Test: shard deletion (challenge 1) ...\n")
 
@@ -809,11 +810,9 @@ func TestChallenge1Concurrent(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // optional test to see whether servers can handle
 // shards that are not affected by a config change
 // while the config change is underway
-//
 func TestChallenge2Unaffected(t *testing.T) {
 	fmt.Printf("Test: unaffected shard access (challenge 2) ...\n")
 
@@ -879,11 +878,9 @@ func TestChallenge2Unaffected(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // optional test to see whether servers can handle operations on shards that
 // have been received as a part of a config migration when the entire migration
 // has not yet completed.
-//
 func TestChallenge2Partial(t *testing.T) {
 	fmt.Printf("Test: partial migration shard access (challenge 2) ...\n")
 

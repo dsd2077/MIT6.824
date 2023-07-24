@@ -1,4 +1,4 @@
-package shardmaster
+package shardkv
 
 import "log"
 
