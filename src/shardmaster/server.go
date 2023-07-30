@@ -3,7 +3,7 @@ package shardmaster
 import (
 	"../raft"
 	"fmt"
-	"math"
+	"sort"
 	"time"
 )
 import "../labrpc"
@@ -209,6 +209,7 @@ func (sm *ShardMaster) Query(args *QueryArgs, reply *QueryReply) {
 
 }
 
+// map的选取是随机的
 func (sm *ShardMaster) copyGroup(lastGroups map[int][]string) map[int][]string {
 	newGroups := make(map[int][]string)
 	for gid, servers := range lastGroups {
@@ -237,14 +238,20 @@ func (sm *ShardMaster) shards2group(groups map[int][]string, shards [NShards]int
 func (sm *ShardMaster) findMaxShardsGroup(g2s map[int][]int) int {
 	maxGid := 0
 	maxShards := 0
-	for gid, shards := range g2s {
+	gids := make([]int, 0)
+	for gid, _ := range g2s {
+		gids = append(gids, gid)
+	}
+	sort.Ints(gids)
+
+	for _, gid := range gids {
 		//优先处理未分配的shards
-		if gid == 0 && len(shards) != 0 {
+		if gid == 0 && len(g2s[gid]) != 0 {
 			return gid
 		}
-		if len(shards) > maxShards {
+		if len(g2s[gid]) > maxShards {
 			maxGid = gid
-			maxShards = len(shards)
+			maxShards = len(g2s[gid])
 		}
 	}
 	return maxGid
@@ -253,14 +260,16 @@ func (sm *ShardMaster) findMaxShardsGroup(g2s map[int][]int) int {
 // 找到具有最少分片数的组，并返回gid
 func (sm *ShardMaster) findMinShardsGroup(g2s map[int][]int) int {
 	minGid := 0
-	minShards := math.MaxInt
-	for gid, shards := range g2s {
-		if gid == 0 {
-			continue
-		}
-		if len(shards) < minShards {
-			minGid = gid
-			minShards = len(shards)
+	minShards := NShards + 1
+	gids := make([]int, 0)
+	for gid, _ := range g2s {
+		gids = append(gids, gid)
+	}
+	sort.Ints(gids)
+
+	for _, gid := range gids {
+		if gid != 0 && len(g2s[gid]) < minShards {
+			minGid, minShards = gid, len(g2s[gid])
 		}
 	}
 	return minGid

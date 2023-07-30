@@ -60,6 +60,7 @@ func MakeClerk(masters []*labrpc.ClientEnd, make_end func(string) *labrpc.Client
 	ck.config = ck.sm.Query(-1)
 	ck.clientId = nrand()
 	ck.opId = 0
+	ck.leaders = make(map[int]int)
 
 	//获取config
 	return ck
@@ -79,20 +80,27 @@ func (ck *Clerk) Get(key string) string {
 	for {
 		shard := key2shard(key)
 		gid := ck.config.Shards[shard] //如果config为空这里会报错，所以启动clerk之前一定要确保已经拿到了一个config,否则不能开始接受命令
+		if _, ok := ck.leaders[gid]; !ok {
+			ck.leaders[gid] = 0
+		}
 		if servers, ok := ck.config.Groups[gid]; ok {
 			// try each server for the shard.
-			for si := 0; si < len(servers); si++ {
-				srv := ck.make_end(servers[si])
+			for i := 0; i < len(servers); i++ {
+				srv := ck.make_end(servers[ck.leaders[gid]])
 				var reply GetReply
 				ok := srv.Call("ShardKV.Get", &args, &reply)
-				if ok && (reply.Err == OK || reply.Err == ErrNoKey) {
+				if !ok || reply.Err == ErrWrongLeader {
+					ck.leaders[gid] = (ck.leaders[gid] + 1) % len(servers)
+					continue
+				}
+				if reply.Err == ErrWrongGroup {
+					break
+				}
+				if reply.Err == OK || reply.Err == ErrNoKey {
 					ck.opId++
 					return reply.Value
 				}
-				if ok && (reply.Err == ErrWrongGroup) {
-					break
-				}
-				// ... not ok, or ErrWrongLeader
+				//time.Sleep(100 * time.Millisecond)
 			}
 		}
 		// 某一个shard没人负责，或者查询到的组并不负责某一个shard(发生reconfiguration),才会走到这里
@@ -117,19 +125,26 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 	for {
 		shard := key2shard(key)
 		gid := ck.config.Shards[shard]
+		if _, ok := ck.leaders[gid]; !ok {
+			ck.leaders[gid] = 0
+		}
 		if servers, ok := ck.config.Groups[gid]; ok {
 			for si := 0; si < len(servers); si++ {
 				srv := ck.make_end(servers[si])
 				var reply PutAppendReply
 				ok := srv.Call("ShardKV.PutAppend", &args, &reply)
-				if ok && reply.Err == OK {
+				if !ok || reply.Err == ErrWrongLeader {
+					ck.leaders[gid] = (ck.leaders[gid] + 1) % len(servers)
+					continue
+				}
+				if reply.Err == ErrWrongGroup {
+					break
+				}
+				if reply.Err == OK {
 					ck.opId++
 					return
 				}
-				if ok && reply.Err == ErrWrongGroup {
-					break
-				}
-				// ... not ok, or ErrWrongLeader
+				//time.Sleep(100 * time.Millisecond)
 			}
 		}
 		time.Sleep(100 * time.Millisecond)

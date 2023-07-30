@@ -9,13 +9,15 @@ package shardkv
 // You will have to modify these definitions.
 //
 
+const NShards = 10
 const (
-	OK             = "OK"
-	ErrNoKey       = "ErrNoKey"
-	ErrWrongGroup  = "ErrWrongGroup"
-	ErrWrongLeader = "ErrWrongLeader"
-	ErrReqTimeOut  = "ErrReqTimeOut"
-	ErrNoShards    = "ErrNoShards"
+	OK                  = "OK"
+	ErrNoKey            = "ErrNoKey"
+	ErrWrongGroup       = "ErrWrongGroup"
+	ErrWrongLeader      = "ErrWrongLeader"
+	ErrReqTimeOut       = "ErrReqTimeOut"
+	ErrNotReceiveShards = "ErrNoShards"
+	ErrWrongConfigNum   = "ErrWrongConfigNum"
 )
 
 type Err string
@@ -49,20 +51,21 @@ type GetReply struct {
 	Value string
 }
 
-type ShardTransfer1Args struct {
-	TransferToGid int   //迁移到哪个组
-	Shards        []int //迁移哪些shard
+type ShardTransferArgs struct {
+	Shards    []int
+	ConfigNum int
 }
 
-type ShardTransfer1Reply struct {
-	Err Err
+type ShardTransferReply struct {
+	Data map[int]*Shard
+	Err  Err
 }
 
-type ShardTransfer2Args struct {
-	Shards map[int]bool //迁移哪些shard，定义为map方便使用
-	Data   map[string]string
+type CheckShardArgs struct {
+	Shards    []int
+	ConfigNum int
 }
 
-type ShardTransfer2Reply struct {
+type CheckShardReply struct {
 	Err Err
 }

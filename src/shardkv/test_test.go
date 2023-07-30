@@ -35,15 +35,17 @@ func TestStaticShards(t *testing.T) {
 	n := 10
 	ka := make([]string, n)
 	va := make([]string, n)
+	DPrintf("1111")
 	for i := 0; i < n; i++ {
 		ka[i] = strconv.Itoa(i) // ensure multiple shards
 		va[i] = randstring(20)
 		ck.Put(ka[i], va[i])
 	}
+	DPrintf("2222")
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 	}
-	DPrintf("1111")
+	DPrintf("3333")
 
 	// make sure that the data really is sharded by
 	// shutting down one shard and checking that some
@@ -107,17 +109,21 @@ func TestJoinLeave(t *testing.T) {
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 	}
+	DPrintf("1111")
 
 	cfg.join(1)
+	DPrintf("join group 1")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 		x := randstring(5)
 		ck.Append(ka[i], x)
 		va[i] += x
+		DPrintf("---------------")
 	}
 
 	cfg.leave(0)
+	DPrintf("leave group 0")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
@@ -129,8 +135,10 @@ func TestJoinLeave(t *testing.T) {
 	// allow time for shards to transfer.
 	time.Sleep(1 * time.Second)
 
+	DPrintf("2222")
 	cfg.checklogs()
 	cfg.ShutdownGroup(0)
+	DPrintf("shut down group 0")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
@@ -160,10 +168,14 @@ func TestSnapshot(t *testing.T) {
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 	}
+	DPrintf("1111")
 
 	cfg.join(1)
 	cfg.join(2)
 	cfg.leave(0)
+	DPrintf("join 1")
+	DPrintf("join 2")
+	DPrintf("leave 0")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
@@ -171,9 +183,12 @@ func TestSnapshot(t *testing.T) {
 		ck.Append(ka[i], x)
 		va[i] += x
 	}
+	DPrintf("2222")
 
 	cfg.leave(1)
 	cfg.join(0)
+	DPrintf("leave 1")
+	DPrintf("join 0")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
@@ -181,16 +196,19 @@ func TestSnapshot(t *testing.T) {
 		ck.Append(ka[i], x)
 		va[i] += x
 	}
+	DPrintf("3333")
 
 	time.Sleep(1 * time.Second)
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 	}
+	DPrintf("4444")
 
 	time.Sleep(1 * time.Second)
 
 	cfg.checklogs()
+	DPrintf("5555")
 
 	cfg.ShutdownGroup(0)
 	cfg.ShutdownGroup(1)
@@ -199,6 +217,7 @@ func TestSnapshot(t *testing.T) {
 	cfg.StartGroup(0)
 	cfg.StartGroup(1)
 	cfg.StartGroup(2)
+	DPrintf("restart servers!")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
@@ -228,16 +247,24 @@ func TestMissChange(t *testing.T) {
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 	}
+	DPrintf("1111")
 
 	cfg.join(1)
+	DPrintf("join 1")
 
 	cfg.ShutdownServer(0, 0)
 	cfg.ShutdownServer(1, 0)
 	cfg.ShutdownServer(2, 0)
+	DPrintf("shut down group[%d]--server[%d]", 0, 0)
+	DPrintf("shut down group[%d]--server[%d]", 1, 0)
+	DPrintf("shut down group[%d]--server[%d]", 2, 0)
 
 	cfg.join(2)
 	cfg.leave(1)
 	cfg.leave(0)
+	DPrintf("join 2")
+	DPrintf("leave 1")
+	DPrintf("leave 0")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
@@ -245,19 +272,26 @@ func TestMissChange(t *testing.T) {
 		ck.Append(ka[i], x)
 		va[i] += x
 	}
+	DPrintf("2222")
 
 	cfg.join(1)
+	DPrintf("join 1")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 		x := randstring(20)
 		ck.Append(ka[i], x)
 		va[i] += x
+
 	}
+	DPrintf("3333")
 
 	cfg.StartServer(0, 0)
 	cfg.StartServer(1, 0)
 	cfg.StartServer(2, 0)
+	DPrintf("start group[%d]--server[%d]", 0, 0)
+	DPrintf("start group[%d]--server[%d]", 1, 0)
+	DPrintf("start group[%d]--server[%d]", 2, 0)
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
@@ -265,15 +299,21 @@ func TestMissChange(t *testing.T) {
 		ck.Append(ka[i], x)
 		va[i] += x
 	}
+	DPrintf("4444")
 
 	time.Sleep(2 * time.Second)
 
 	cfg.ShutdownServer(0, 1)
 	cfg.ShutdownServer(1, 1)
 	cfg.ShutdownServer(2, 1)
+	DPrintf("shut down group[%d]--server[%d]", 0, 1)
+	DPrintf("shut down group[%d]--server[%d]", 1, 1)
+	DPrintf("shut down group[%d]--server[%d]", 2, 1)
 
 	cfg.join(0)
 	cfg.leave(2)
+	DPrintf("join 0")
+	DPrintf("leave 2")
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
@@ -281,14 +321,19 @@ func TestMissChange(t *testing.T) {
 		ck.Append(ka[i], x)
 		va[i] += x
 	}
+	DPrintf("5555")
 
 	cfg.StartServer(0, 1)
 	cfg.StartServer(1, 1)
 	cfg.StartServer(2, 1)
+	DPrintf("start group[%d]--server[%d]", 0, 1)
+	DPrintf("start group[%d]--server[%d]", 1, 1)
+	DPrintf("start group[%d]--server[%d]", 2, 1)
 
 	for i := 0; i < n; i++ {
 		check(t, ck, ka[i], va[i])
 	}
+	DPrintf("6666")
 
 	fmt.Printf("  ... Passed\n")
 }
