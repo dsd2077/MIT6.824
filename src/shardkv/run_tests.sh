@@ -1,8 +1,8 @@
 #!/bin/bash
 
-for i in {1..1000}
+for i in {3..1000}
 do
     echo "Running iteration $i"
-    go test -run TestChallenge1Delete
+    go test -race -run TestChallenge1Concurrent > log${i}
 done
 

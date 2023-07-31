@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"sort"
 	"sync/atomic"
 	"time"
 )
@@ -33,6 +34,7 @@ type Op struct {
 	Shards           []int
 	ShardsData       map[int]*Shard
 	ApplyShardDataCh chan map[int]*Shard
+	ConfigNum        int
 }
 
 type ShardKV struct {
@@ -168,7 +170,7 @@ func (kv *ShardKV) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 		reply.Err = err
 		return
 	}
-	DPrintf("[%d] group [%d] server receive [%s] request", kv.gid, kv.me, args.Op)
+	//DPrintf("[%d] group [%d] server receive [%s] request", kv.gid, kv.me, args.Op)
 	//已经执行过，直接返回
 	kv.mu.Lock()
 	shardData := kv.database[key2shard(args.Key)]
@@ -247,6 +249,7 @@ func (kv *ShardKV) fetchNewConfig() {
 // 方法二：接收方有办法进行去重
 func (kv *ShardKV) pullingShardsData() {
 	for !kv.killed() {
+		time.Sleep(100 * time.Millisecond) //等待日志重放结束
 		_, isLeader := kv.rf.GetState()
 		if !isLeader {
 			time.Sleep(100 * time.Millisecond)
@@ -272,7 +275,6 @@ func (kv *ShardKV) pullingShardsData() {
 		}
 		wg.Wait()
 
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -329,25 +331,28 @@ func (kv *ShardKV) sendCheckShard(gid int, shards []int, wg *sync.WaitGroup) {
 	srv := kv.make_end(servers[leader])
 	kv.mu.Unlock()
 
+	DPrintf("[%d]-[%d] sendCheckShard to [%d]-[%d] for shard %v in config [%d]", kv.gid, kv.me, gid, leader, shards, args.ConfigNum)
 	var reply CheckShardReply
 	ok := srv.Call("ShardKV.CheckShard", &args, &reply) //如果发生partition这里不会返回
 
 	kv.mu.Lock()
-	defer kv.mu.Unlock()
 
 	// 过期的RPC
 	if args.ConfigNum != kv.currentConfig.Num {
+		kv.mu.Unlock()
 		return
 	}
 
 	if !ok || reply.Err == ErrWrongLeader {
 		kv.leaders[gid] = (kv.leaders[gid] + 1) % len(servers)
 	}
+	kv.mu.Unlock()
 
 	if ok && reply.Err == OK {
 		op := Op{
-			Op:     "GC",
-			Shards: shards,
+			Op:        "GC",
+			ConfigNum: args.ConfigNum,
+			Shards:    shards,
 		}
 		kv.rf.Start(op)
 	}
@@ -356,7 +361,7 @@ func (kv *ShardKV) sendCheckShard(gid int, shards []int, wg *sync.WaitGroup) {
 func (kv *ShardKV) CheckShard(args *CheckShardArgs, reply *CheckShardReply) {
 	_, isLeader := kv.rf.GetState()
 	if !isLeader {
-		DPrintf("[%d]-[%d] receive ShardTransfer RPC for shards %v in config [%d] refuse because wrong leader", kv.gid, kv.me, args.Shards, args.ConfigNum)
+		DPrintf("[%d]-[%d] receive CheckShard RPC for shards %v in config [%d] refuse because wrong leader", kv.gid, kv.me, args.Shards, args.ConfigNum)
 		reply.Err = ErrWrongLeader
 		return
 	}
@@ -394,8 +399,10 @@ func (kv *ShardKV) sendShardTransfer(gid int, shards []int, wg *sync.WaitGroup) 
 		kv.leaders[gid] = 0
 	}
 
+	shardsCopy := make([]int, len(shards))
+	copy(shardsCopy, shards)
 	args := ShardTransferArgs{
-		Shards:    shards,
+		Shards:    shardsCopy,
 		ConfigNum: kv.currentConfig.Num,
 	}
 	kv.mu.Unlock()
@@ -426,6 +433,7 @@ func (kv *ShardKV) sendShardTransfer(gid int, shards []int, wg *sync.WaitGroup) 
 					Op:         "ReceiveShards",
 					Owner:      kv.me,
 					ApplyCh:    make(chan bool),
+					ConfigNum:  args.ConfigNum,
 					Shards:     shards,
 					ShardsData: reply.Data,
 				}
@@ -472,6 +480,7 @@ func (kv *ShardKV) ShardTransfer(args *ShardTransferArgs, reply *ShardTransferRe
 		Op:               "TransShards",
 		Shards:           args.Shards,
 		Owner:            kv.me,
+		ConfigNum:        args.ConfigNum,
 		ApplyShardDataCh: make(chan map[int]*Shard),
 	}
 	_, term, ok := kv.rf.Start(op)
@@ -514,7 +523,7 @@ func (kv *ShardKV) deepCopyShard(shard *Shard) *Shard {
 }
 
 func (kv *ShardKV) checkSnapShot() {
-	for {
+	for !kv.killed() {
 		if kv.maxraftstate != -1 && kv.persister.RaftStateSize() >= kv.maxraftstate {
 			w := new(bytes.Buffer)
 			e := labgob.NewEncoder(w)
@@ -608,9 +617,17 @@ func (kv *ShardKV) applier() {
 }
 
 func (kv *ShardKV) doGC(op Op) {
+	DPrintf("[%d]-[%d] do GC for Shards %v", kv.gid, kv.me, op.Shards)
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
 	// 发起Raft日志删除数据
+	// 过期的RPC
+	if op.ConfigNum != kv.currentConfig.Num {
+		return
+	}
 	for _, shard := range op.Shards {
-		if _, exist := kv.database[shard]; exist {
+		if shardData, exist := kv.database[shard]; exist && shardData.Status == GCing {
 			delete(kv.database, shard)
 		}
 	}
@@ -618,12 +635,17 @@ func (kv *ShardKV) doGC(op Op) {
 
 // 这里有个麻烦事：
 // 对于不属于自己的shard的状态要如何转移
-// 不能直接删除, 如果回执RPC丢包了，拿数据就丢失了
+// 不能直接删除, 如果回执RPC丢包了，数据就丢失了
 // 不能将状态修改为Serving，修改过后改group回立刻执行下一个config，如果回执RPC丢包了，再次发起数据请求也拿不到数据
 func (kv *ShardKV) doTransShards(op Op, commandTerm int) {
 	// 拿到相关数据、删除相关数据
 	kv.mu.Lock()
 	//这些数据处于Bepulling状态
+	if op.ConfigNum != kv.currentConfig.Num {
+		kv.mu.Unlock()
+		return
+	}
+
 	data := make(map[int]*Shard)
 	for _, shard := range op.Shards {
 		if _, ok := kv.database[shard]; ok {
@@ -648,16 +670,32 @@ func (kv *ShardKV) doReceiveShards(op Op, commandTerm int) {
 	//	fmt.Println(op.Shards)
 	//}
 	kv.mu.Lock()
+
+	if op.ConfigNum != kv.currentConfig.Num {
+		kv.mu.Unlock()
+		return
+	}
 	for _, shard := range op.Shards {
-		if shardData, ok := op.ShardsData[shard]; ok {
-			for key, value := range shardData.Database {
-				kv.database[shard].Database[key] = value //TODO:这里有问题
+		// 版本一：
+		//if shardData, ok := op.ShardsData[shard]; ok {
+		//	for key, value := range shardData.Database {
+		//		kv.database[shard].Database[key] = value //TODO:这里有问题
+		//	}
+		//	for client, opId := range shardData.AppliedOp {
+		//		kv.database[shard].AppliedOp[client] = opId
+		//	}
+		//}
+		//kv.database[shard].Status = Serving
+
+		if shardData, ok := kv.database[shard]; ok && shardData.Status == Pulling {
+			for key, value := range op.ShardsData[shard].Database {
+				shardData.Database[key] = value
 			}
-			for client, opId := range shardData.AppliedOp {
-				kv.database[shard].AppliedOp[client] = opId
+			for client, opId := range op.ShardsData[shard].AppliedOp {
+				shardData.AppliedOp[client] = opId
 			}
+			shardData.Status = Serving
 		}
-		kv.database[shard].Status = Serving
 	}
 
 	//for shard, shardData := range op.ShardsData {
@@ -703,17 +741,29 @@ func (kv *ShardKV) doConfigChangeOp(op Op) {
 }
 
 func (kv *ShardKV) changeShardStatus(newShards [NShards]int) {
+	shards := make([]int, 0)
+	for shard, _ := range kv.database {
+		shards = append(shards, shard)
+	}
+	sort.Ints(shards)
+	DPrintf("[%d]-[%d] current shards : %v", kv.gid, kv.me, shards)
 	oldShards := kv.currentConfig.Shards
 	for shard := 0; shard < NShards; shard++ {
 		//old Shards not ever belong to myself
+		// TODO:old shards不在database中，可能是由什么导致的？——既然之前属于你，那就一定有！如果没有是什么导致的？
+		//	之前的数据没接到
 		if oldShards[shard] == kv.gid && newShards[shard] != kv.gid {
+			shardData, ok := kv.database[shard]
+			if !ok {
+				DPrintf("[%d]-[%d] lose shard [%d]", kv.gid, kv.me, shard)
+				continue
+			}
 			if oldShards[shard] != 0 {
-				kv.database[shard].Status = BePulling
+				shardData.Status = BePulling
 			}
 		}
 		// new Shards own to myself
 		if oldShards[shard] != kv.gid && newShards[shard] == kv.gid {
-			// 如果不存在就创建一个新的
 			shardData := Shard{
 				Database:  make(map[string]string),
 				AppliedOp: make(map[int64]int),
@@ -729,11 +779,15 @@ func (kv *ShardKV) changeShardStatus(newShards [NShards]int) {
 }
 
 func (kv *ShardKV) doClientOp(op Op, commandTerm int) {
-	DPrintf("[%d]-[%d] do [%s] operation", kv.gid, kv.me, op.Op)
+	//DPrintf("[%d]-[%d] do [%s] operation", kv.gid, kv.me, op.Op)
 	kv.mu.Lock()
 	responsible := kv.currentConfig.Shards[key2shard(op.Key)] == kv.gid
 
-	shardData := kv.database[key2shard(op.Key)]
+	shardData, ok := kv.database[key2shard(op.Key)] //TODO:这里为什么会有问题？——什么情况下这个shardData会不存在？——猜测：是过去的op，在日志回放的时候重新执行，但是此时shard已经被清除了
+	if !ok {
+		kv.mu.Unlock()
+		return
+	}
 	value, exist := shardData.AppliedOp[op.ClientId]
 	if (!exist || value < op.OpId) && responsible {
 		switch op.Op {
@@ -814,7 +868,6 @@ func StartServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persister,
 	kv := new(ShardKV)
 	kv.me = me
 	kv.applyCh = make(chan raft.ApplyMsg)
-	kv.rf = raft.Make(servers, me, persister, kv.applyCh)
 	kv.make_end = make_end
 	kv.gid = gid
 	kv.masters = masters
@@ -822,16 +875,20 @@ func StartServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persister,
 	kv.persister = persister
 
 	// Your initialization code here.
+
 	// Use something like this to talk to the shardmaster:
 	kv.sm = shardmaster.MakeClerk(kv.masters)
-	kv.lastConfig = kv.sm.Query(0)
-	kv.currentConfig = kv.sm.Query(0)
-
-	kv.database = make(map[int]*Shard)
-	kv.leaders = make(map[int]int)
 	if snapshot := kv.persister.ReadSnapshot(); snapshot != nil && len(snapshot) > 0 {
 		kv.installSnapshot(snapshot)
+	} else {
+		kv.lastConfig = kv.sm.Query(0)
+		kv.currentConfig = kv.sm.Query(0)
+		kv.database = make(map[int]*Shard)
 	}
+
+	kv.rf = raft.Make(servers, me, persister, kv.applyCh)
+
+	kv.leaders = make(map[int]int)
 	go kv.fetchNewConfig()
 	go kv.applier()
 	go kv.checkSnapShot()

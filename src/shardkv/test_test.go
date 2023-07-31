@@ -826,18 +826,28 @@ func TestChallenge1Concurrent(t *testing.T) {
 	t0 := time.Now()
 	for time.Since(t0) < 12*time.Second {
 		cfg.join(2)
+		DPrintf("join group 2")
 		cfg.join(1)
+		DPrintf("join group 1")
 		time.Sleep(time.Duration(rand.Int()%900) * time.Millisecond)
 		cfg.ShutdownGroup(0)
+		DPrintf("shut down group 0")
 		cfg.ShutdownGroup(1)
+		DPrintf("shut down group 1")
 		cfg.ShutdownGroup(2)
+		DPrintf("shut down group 2")
 		cfg.StartGroup(0)
+		DPrintf("restart group 0")
 		cfg.StartGroup(1)
+		DPrintf("restart group 1")
 		cfg.StartGroup(2)
+		DPrintf("restart group 2")
 
 		time.Sleep(time.Duration(rand.Int()%900) * time.Millisecond)
 		cfg.leave(1)
+		DPrintf("leave group 1")
 		cfg.leave(2)
+		DPrintf("leave group 2")
 		time.Sleep(time.Duration(rand.Int()%900) * time.Millisecond)
 	}
 
